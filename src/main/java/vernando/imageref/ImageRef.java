@@ -18,5 +18,8 @@ public class ImageRef implements ModInitializer {
 		// Proceed with mild caution.
 
 		LOGGER.info("Hello Fabric world!");
+
+		// Register the config
+		ImageRefConfig.init("image-ref", ImageRefConfig.class);
 	}
 }
