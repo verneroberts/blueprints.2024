@@ -2,6 +2,7 @@ package vernando.imageref;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Camera;
@@ -39,67 +40,73 @@ public class ImageRef implements ModInitializer {
 
 		// Register the config
 		ImageRefConfig.init("image-ref", ImageRefConfig.class);
-		// screen = MidnightConfig.getScreen(parent, "image-ref");
 
-		WorldRenderEvents.END.register(context -> {
-			Boolean renderThroughBlocks = false;
-			float scaleX = 20f;
-			float scaleY = 20f;
-			float x = -16f;
-			float y = 63f;
-			float z = 16f;
-			float rotationX = 1f;
-			float rotationY = 1f;
-			float rotationZ = 1f;
-			float alpha = 0.9f;
+		WorldRenderEvents.END.register(context -> {			
+			Boolean renderThroughBlocks = ImageRefConfig.renderThroughBlocks;
+			float scaleX = ImageRefConfig.scaleX;
+			float scaleY = ImageRefConfig.scaleY;
+			float x = ImageRefConfig.positionX;
+			float y = ImageRefConfig.positionY;
+			float z = ImageRefConfig.positionZ;
+			float rotationX = ImageRefConfig.rotationX;
+			float rotationY = ImageRefConfig.rotationY;
+			float rotationZ = ImageRefConfig.rotationZ;
+			float alpha = ImageRefConfig.show == ImageRefConfig.ShowHideEnum.SHOW ? ImageRefConfig.alpha : 0f;
+			String assetPath = ImageRefConfig.imagePath;
 
-			Camera camera = context.camera();
-			Vec3d targetPosition = new Vec3d(x, y, z);
-			Vec3d transformedPosition = targetPosition.subtract(camera.getPos());			
-
-			MatrixStack matrixStack = new MatrixStack();			
-			matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
-			matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
-			matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z);
-
-			matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotationX));
-			matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotationY));
-			matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotationZ));
-			
-			// matrixStack.translate(40, 40, 0);
-			// matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((System.currentTimeMillis() % 5000) / 5000f * 360f));
-			// matrixStack.translate(-40, -40, 0);
-
-			Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
-			Tessellator tessellator = Tessellator.getInstance();
-			BufferBuilder buffer = tessellator.getBuffer();
-
-			if (alpha < 1f) {
-				RenderSystem.enableBlend();
-				RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);									
-			}
-
-			buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-			buffer.vertex(positionMatrix, 0, scaleY, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
-			buffer.vertex(positionMatrix, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
-			buffer.vertex(positionMatrix, scaleX, 0, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
-			buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
-		
-			RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
-			RenderSystem.setShaderTexture(0, new Identifier("image-ref", "master-pnp-habshaer-fl-fl0700-fl0701-photos-577579pu.png"));
-			RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
-
-			if (renderThroughBlocks) {
-				RenderSystem.disableCull();
-				RenderSystem.depthFunc(GL11.GL_ALWAYS);
-			}
-
-			tessellator.draw();
-
-			RenderSystem.depthFunc(GL11.GL_LEQUAL);
-			RenderSystem.enableCull();
-			matrixStack.pop();
+			drawImage(context, renderThroughBlocks, scaleX, scaleY, x, y, z, rotationX, rotationY, rotationZ, alpha,
+					assetPath);
 
 		});
+	}
+
+	private void drawImage(WorldRenderContext context, Boolean renderThroughBlocks, float scaleX, float scaleY, float x,
+			float y, float z, float rotationX, float rotationY, float rotationZ, float alpha, String assetPath) {
+		Camera camera = context.camera();
+		Vec3d targetPosition = new Vec3d(x, y, z);
+		Vec3d transformedPosition = targetPosition.subtract(camera.getPos());			
+
+		MatrixStack matrixStack = new MatrixStack();			
+		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
+		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
+		matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z);
+
+		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotationX));
+		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotationY));
+		matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotationZ));
+		
+		// matrixStack.translate(40, 40, 0);
+		// matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees((System.currentTimeMillis() % 5000) / 5000f * 360f));
+		// matrixStack.translate(-40, -40, 0);
+
+		Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder buffer = tessellator.getBuffer();
+
+		if (alpha < 1f) {
+			RenderSystem.enableBlend();
+			RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);									
+		}
+
+		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
+		buffer.vertex(positionMatrix, 0, scaleY, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
+		buffer.vertex(positionMatrix, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
+		buffer.vertex(positionMatrix, scaleX, 0, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
+		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
+
+		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+		RenderSystem.setShaderTexture(0, new Identifier("image-ref", assetPath));
+		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
+
+		if (renderThroughBlocks) {
+			RenderSystem.disableCull();
+			RenderSystem.depthFunc(GL11.GL_ALWAYS);
+		}
+
+		tessellator.draw();
+
+		RenderSystem.depthFunc(GL11.GL_LEQUAL);
+		RenderSystem.enableCull();
+		matrixStack.pop();
 	}
 }
