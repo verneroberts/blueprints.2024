@@ -42,7 +42,7 @@ public class ImageRef implements ModInitializer {
 		// screen = MidnightConfig.getScreen(parent, "image-ref");
 
 		WorldRenderEvents.END.register(context -> {
-			Boolean renderThroughBlocks = true;
+			Boolean renderThroughBlocks = false;
 			float scaleX = 20f;
 			float scaleY = 20f;
 			float x = -16f;
@@ -51,7 +51,7 @@ public class ImageRef implements ModInitializer {
 			float rotationX = 1f;
 			float rotationY = 1f;
 			float rotationZ = 1f;
-			float alpha = 0.5f;
+			float alpha = 0.9f;
 
 			Camera camera = context.camera();
 			Vec3d targetPosition = new Vec3d(x, y, z);
@@ -87,7 +87,7 @@ public class ImageRef implements ModInitializer {
 		
 			RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
 			RenderSystem.setShaderTexture(0, new Identifier("image-ref", "master-pnp-habshaer-fl-fl0700-fl0701-photos-577579pu.png"));
-			RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+			RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
 			if (renderThroughBlocks) {
 				RenderSystem.disableCull();
