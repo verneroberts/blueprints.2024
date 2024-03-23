@@ -1,0 +1,6 @@
+{
+    "image-ref.midnightconfig.title":"Image Ref",
+    "image-ref.midnightconfig.enum.ShowHideEnum.SHOW":"Show",
+    "image-ref.midnightconfig.enum.ShowHideEnum.HIDE":"Hide",
+    "image-ref.midnightconfig.category.global": "Global"
+  }
