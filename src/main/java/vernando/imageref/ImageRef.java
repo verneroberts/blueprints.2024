@@ -72,7 +72,7 @@ public class ImageRef implements ModInitializer {
 				return;
 			}
 
-			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals("Painting");
+			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals("Painting") || client.player.getOffHandStack().getName().getString().equals("Painting");
 
 			if (isHoldingPainting) {
 				if (visible == false) {
