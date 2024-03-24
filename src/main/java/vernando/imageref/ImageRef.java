@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Camera;
@@ -12,11 +13,16 @@ import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
+
+import java.io.File;
+import java.io.FileInputStream;
 
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
@@ -26,10 +32,14 @@ import org.slf4j.LoggerFactory;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 
-public class ImageRef implements ModInitializer {
+public class ImageRef implements ModInitializer {	
 	private static final String MOD_ID = "image-ref";
 	private static final String MOD_NAME = "Vernando's Image Ref";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);	
+
+	private NativeImage image;
+	private NativeImageBackedTexture texture;
+	private MinecraftClient client;
 	
 	private static boolean visible = false;
 
@@ -71,6 +81,8 @@ public class ImageRef implements ModInitializer {
 			if (client.options == null) {
 				return;
 			}
+
+			this.client = client;
 
 			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals("Painting") || client.player.getOffHandStack().getName().getString().equals("Painting");
 
@@ -195,6 +207,21 @@ public class ImageRef implements ModInitializer {
 	private void drawImage(WorldRenderContext context, Boolean renderThroughBlocks, float scaleX, float scaleY, float x,
 			float y, float z, float rotationX, float rotationY, float rotationZ, float alpha, String assetPath) {
 
+		
+		if (texture == null) {
+			try {
+				// load test.png from config folder as a stream
+				image = NativeImage.read(new FileInputStream(new File("config/" + MOD_ID + "/test.jpg")));
+				texture = new NativeImageBackedTexture(image);		
+				this.client.getTextureManager().registerTexture(new Identifier(MOD_ID, "test"), texture);		
+				
+			} catch (Exception e) {
+				LOGGER.error("Failed to load image: " + assetPath);
+				LOGGER.error(e.getMessage());
+				return;
+			}
+		}
+
 		// ensure [a-z0-9/._-] character in path of location
 		if (!assetPath.matches("^[a-z0-9/._-]+$")) {
 			LOGGER.error("Invalid asset path: " + assetPath);
@@ -231,7 +258,7 @@ public class ImageRef implements ModInitializer {
 		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f).next();
 
 		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
-		RenderSystem.setShaderTexture(0, new Identifier(MOD_ID, assetPath));
+		RenderSystem.setShaderTexture(0, new Identifier(MOD_ID, "test"));
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
 		if (renderThroughBlocks) {
