@@ -89,11 +89,12 @@ public class ImageRef implements ModInitializer {
 				return;
 			}
 
-			float yaw = client.player.getYaw();
-			float pitch = client.player.getPitch();
-
 			// work out the direction the player is facing and use that as the reference when tweaking the position
-
+			String facing = getFacing(client.player.getYaw());
+			
+			String upDown = getUpDown(client.player.getPitch());
+			client.player.sendMessage(Text.of("[" + MOD_NAME + "] Facing: " + facing + ", UpDown: " + upDown), false);
+			client.player.sendMessage(Text.of("current yaw: " + client.player.getYaw() + ", pitch: " + client.player.getPitch()), false);
 
 			float multiplier = keyBindingKey5.isPressed() ? 9.9f : 0f;
 			while (keyBindingKey2.wasPressed()) {
@@ -151,6 +152,33 @@ public class ImageRef implements ModInitializer {
 				drawImage(context, renderThroughBlocks, scaleX, scaleY, x, y, z, rotationX, rotationY, rotationZ, alpha, assetPath);
 			}
 		});
+	}
+
+	private String getFacing(float yaw) {
+		String facing = "?";
+		if (yaw > -45 && yaw < 45) {
+			facing = "S";
+		}
+		if (yaw > 45 && yaw < 135) {
+			facing = "W";
+		}
+		if (yaw > 135 || yaw < -135) {
+			facing = "N";
+		}
+		if (yaw > -135 && yaw < -45) {
+			facing = "E";
+		}
+		return facing;
+	}
+
+	private String getUpDown(float pitch) {
+		String upDown = "N";
+		if (pitch >= 45) {
+			upDown = "U";
+		} else if (pitch <= -45) {
+			upDown = "D";
+		}
+		return upDown;
 	}
 
 	private void drawImage(WorldRenderContext context, Boolean renderThroughBlocks, float scaleX, float scaleY, float x,
