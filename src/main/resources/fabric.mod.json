@@ -2,10 +2,10 @@
 	"schemaVersion": 1,
 	"id": "image-ref",
 	"version": "${version}",
-	"name": "Image Ref",
-	"description": "This is an example description! Tell everyone what your mod is about!",
+	"name": "FHM_Vernando's Image Ref",
+	"description": "Put reference images in your world",
 	"authors": [
-		"Me!"
+		"FHM_Vernando"
 	],
 	"contact": {
 		"homepage": "https://fabricmc.net/",
