@@ -49,17 +49,17 @@ public class ImageRef implements ModInitializer {
 	public void onInitialize() {
 		Config.init(MOD_ID, Config.class);
 
-		keyNudgeDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgedown", GLFW.GLFW_KEY_KP_2, "key.categories.misc"));
-		keyNudgeLeft = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeleft", GLFW.GLFW_KEY_KP_4, "key.categories.misc"));
-		keyNudgeRight = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeright", GLFW.GLFW_KEY_KP_6, "key.categories.misc"));
-		keyNudgeUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeup", GLFW.GLFW_KEY_KP_8, "key.categories.misc"));
-		keyScaleXUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleXup", GLFW.GLFW_KEY_KP_7, "key.categories.misc"));
-		keyScaleXDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleXdown", GLFW.GLFW_KEY_KP_9, "key.categories.misc"));
-		keyScaleYUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleYup", GLFW.GLFW_KEY_KP_1, "key.categories.misc"));
-		keyScaleYDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleYdown", GLFW.GLFW_KEY_KP_3, "key.categories.misc"));
-		keyNudgeMultiply = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeMultiply", GLFW.GLFW_KEY_KP_5, "key.categories.misc"));
-		keyRenderThroughBlocks = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.renderThroughBlocks", GLFW.GLFW_KEY_KP_0, "key.categories.misc"));
-		keySetPositionToPlayer = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.setPositionToPlayer", GLFW.GLFW_KEY_KP_DECIMAL, "key.categories.misc"));
+		keyNudgeDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("Nudge Down", GLFW.GLFW_KEY_KP_2, "Image Ref"));
+		keyNudgeLeft = KeyBindingHelper.registerKeyBinding(new KeyBinding("Nudge Left", GLFW.GLFW_KEY_KP_4, "Image Ref"));
+		keyNudgeRight = KeyBindingHelper.registerKeyBinding(new KeyBinding("Nudge Right", GLFW.GLFW_KEY_KP_6, "Image Ref"));
+		keyNudgeUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("Nudge Up", GLFW.GLFW_KEY_KP_8, "Image Ref"));
+		keyScaleXUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("Scale X Up", GLFW.GLFW_KEY_KP_7, "Image Ref"));
+		keyScaleXDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("Scale X Down", GLFW.GLFW_KEY_KP_9, "Image Ref"));
+		keyScaleYUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("Scale Y up", GLFW.GLFW_KEY_KP_1, "Image Ref"));
+		keyScaleYDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("Scale Y down", GLFW.GLFW_KEY_KP_3, "Image Ref"));
+		keyNudgeMultiply = KeyBindingHelper.registerKeyBinding(new KeyBinding("Nudge Embiggen Modifier", GLFW.GLFW_KEY_KP_5, "Image Ref"));
+		keyRenderThroughBlocks = KeyBindingHelper.registerKeyBinding(new KeyBinding("Render Through Blocks", GLFW.GLFW_KEY_KP_0, "Image Ref"));
+		keySetPositionToPlayer = KeyBindingHelper.registerKeyBinding(new KeyBinding("Set Position To Player", GLFW.GLFW_KEY_KP_DECIMAL, "Image Ref"));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
@@ -87,13 +87,7 @@ public class ImageRef implements ModInitializer {
 
 			// work out the direction the player is facing and use that as the reference when tweaking the position
 			float yaw = client.getCameraEntity().getYaw();
-			while (yaw < -180) {
-				yaw += 360;
-			}
-			while (yaw > 180) {
-				yaw -= 360;
-			}
-			LOGGER.info("Yaw: " + yaw);
+			yaw = fixYaw(yaw);
 			Direction direction = getDirection(yaw);			
 			
 			float multiplier = keyNudgeMultiply.isPressed() ? 9.9f : 0f;
@@ -168,6 +162,17 @@ public class ImageRef implements ModInitializer {
 				drawImage(context, renderThroughBlocks, scaleX, scaleY, x, y, z, rotationX, rotationY, rotationZ, alpha, assetPath);
 			}
 		});
+	}
+
+	private float fixYaw(float yaw) {
+		// no idea why, but yaw seems to just grow when the player spins in the same direction
+		while (yaw < -180) {
+			yaw += 360;
+		}
+		while (yaw > 180) {
+			yaw -= 360;
+		}
+		return yaw;
 	}
 
 	enum Direction {
