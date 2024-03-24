@@ -33,35 +33,33 @@ public class ImageRef implements ModInitializer {
 	
 	private static boolean visible = false;
 
-	private static KeyBinding keyBindingKey4;
-	private static KeyBinding keyBindingKey6;
-	private static KeyBinding keyBindingKey8;
-	private static KeyBinding keyBindingKey2;
-	private static KeyBinding keyBindingKey7;
-	private static KeyBinding keyBindingKey9;
-	private static KeyBinding keyBindingKey1;
-	private static KeyBinding keyBindingKey3;
-	private static KeyBinding keyBindingKey5;
-	private static KeyBinding keyBindingKey0;
-	private static KeyBinding keyBindingKeyDot;
+	private static KeyBinding keyNudgeLeft;
+	private static KeyBinding keyNudgeRight;
+	private static KeyBinding keyNudgeUp;
+	private static KeyBinding keyNudgeDown;
+	private static KeyBinding keyScaleXUp;
+	private static KeyBinding keyScaleXDown;
+	private static KeyBinding keyScaleYUp;
+	private static KeyBinding keyScaleYDown;
+	private static KeyBinding keyNudgeMultiply;
+	private static KeyBinding keyRenderThroughBlocks;
+	private static KeyBinding keySetPositionToPlayer;
 
 	@Override
 	public void onInitialize() {
-		LOGGER.info("Hello Fabric world!");
-
 		Config.init(MOD_ID, Config.class);
 
-		keyBindingKey2 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key2", GLFW.GLFW_KEY_KP_2, "key.categories.misc"));
-		keyBindingKey4 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key4", GLFW.GLFW_KEY_KP_4, "key.categories.misc"));
-		keyBindingKey6 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key6", GLFW.GLFW_KEY_KP_6, "key.categories.misc"));
-		keyBindingKey8 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key8", GLFW.GLFW_KEY_KP_8, "key.categories.misc"));
-		keyBindingKey7 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key7", GLFW.GLFW_KEY_KP_7, "key.categories.misc"));
-		keyBindingKey9 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key9", GLFW.GLFW_KEY_KP_9, "key.categories.misc"));
-		keyBindingKey1 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key1", GLFW.GLFW_KEY_KP_1, "key.categories.misc"));
-		keyBindingKey3 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key3", GLFW.GLFW_KEY_KP_3, "key.categories.misc"));
-		keyBindingKey5 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key5", GLFW.GLFW_KEY_KP_5, "key.categories.misc"));
-		keyBindingKey0 = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.key0", GLFW.GLFW_KEY_KP_0, "key.categories.misc"));
-		keyBindingKeyDot = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.keydot", GLFW.GLFW_KEY_KP_DECIMAL, "key.categories.misc"));
+		keyNudgeDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgedown", GLFW.GLFW_KEY_KP_2, "key.categories.misc"));
+		keyNudgeLeft = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeleft", GLFW.GLFW_KEY_KP_4, "key.categories.misc"));
+		keyNudgeRight = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeright", GLFW.GLFW_KEY_KP_6, "key.categories.misc"));
+		keyNudgeUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeup", GLFW.GLFW_KEY_KP_8, "key.categories.misc"));
+		keyScaleXUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleXup", GLFW.GLFW_KEY_KP_7, "key.categories.misc"));
+		keyScaleXDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleXdown", GLFW.GLFW_KEY_KP_9, "key.categories.misc"));
+		keyScaleYUp = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleYup", GLFW.GLFW_KEY_KP_1, "key.categories.misc"));
+		keyScaleYDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.scaleYdown", GLFW.GLFW_KEY_KP_3, "key.categories.misc"));
+		keyNudgeMultiply = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.nudgeMultiply", GLFW.GLFW_KEY_KP_5, "key.categories.misc"));
+		keyRenderThroughBlocks = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.renderThroughBlocks", GLFW.GLFW_KEY_KP_0, "key.categories.misc"));
+		keySetPositionToPlayer = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.image-ref.setPositionToPlayer", GLFW.GLFW_KEY_KP_DECIMAL, "key.categories.misc"));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
@@ -79,54 +77,72 @@ public class ImageRef implements ModInitializer {
 			if (isHoldingPainting) {
 				if (visible == false) {
 					visible = true;
-					// client.player.sendMessage(Text.of("[" + MOD_NAME + "] Enabled"), false);
 				}
 			} else {
 				if (visible == true) {
 					visible = false;
-					// client.player.sendMessage(Text.of("[" + MOD_NAME + "] Disabled"), false);
 				}				
 				return;
 			}
 
 			// work out the direction the player is facing and use that as the reference when tweaking the position
-			String facing = getFacing(client.player.getYaw());
+			float yaw = client.getCameraEntity().getYaw();
+			while (yaw < -180) {
+				yaw += 360;
+			}
+			while (yaw > 180) {
+				yaw -= 360;
+			}
+			LOGGER.info("Yaw: " + yaw);
+			Direction direction = getDirection(yaw);			
 			
-			String upDown = getUpDown(client.player.getPitch());
-			client.player.sendMessage(Text.of("[" + MOD_NAME + "] Facing: " + facing + ", UpDown: " + upDown), false);
-			client.player.sendMessage(Text.of("current yaw: " + client.player.getYaw() + ", pitch: " + client.player.getPitch()), false);
-
-			float multiplier = keyBindingKey5.isPressed() ? 9.9f : 0f;
-			while (keyBindingKey2.wasPressed()) {
+			float multiplier = keyNudgeMultiply.isPressed() ? 9.9f : 0f;
+			while (keyNudgeDown.wasPressed()) {
 				Config.positionY -= 0.1 + multiplier;
 			}
-			while (keyBindingKey8.wasPressed()) {
+			while (keyNudgeUp.wasPressed()) {
 				Config.positionY += 0.1 + multiplier;
 			}
-			while (keyBindingKey4.wasPressed()) {
-				Config.positionX -= 0.1 + multiplier;
+			while (keyNudgeLeft.wasPressed()) {
+				if (direction == Direction.NORTH) {
+					Config.positionX -= 0.1 + multiplier;
+				} else if (direction == Direction.EAST) {
+					Config.positionZ -= 0.1 + multiplier;
+				} else if (direction == Direction.SOUTH) {
+					Config.positionX += 0.1 + multiplier;
+				} else if (direction == Direction.WEST) {
+					Config.positionZ += 0.1 + multiplier;
+				}		
 			}
-			while (keyBindingKey6.wasPressed()) {
-				Config.positionX += 0.1 + multiplier;
+			while (keyNudgeRight.wasPressed()) {
+				if (direction == Direction.NORTH) {
+					Config.positionX += 0.1 + multiplier;
+				} else if (direction == Direction.EAST) {
+					Config.positionZ += 0.1 + multiplier;
+				} else if (direction == Direction.SOUTH) {
+					Config.positionX -= 0.1 + multiplier;
+				} else if (direction == Direction.WEST) {
+					Config.positionZ -= 0.1 + multiplier;
+				}
 			}
-			while (keyBindingKey7.wasPressed()) {
+			while (keyScaleXUp.wasPressed()) {
 				Config.scaleX -= 0.1 + multiplier;				
 			}
-			while (keyBindingKey9.wasPressed()) {
+			while (keyScaleXDown.wasPressed()) {
 				Config.scaleX += 0.1 + multiplier;
 			}
-			while (keyBindingKey1.wasPressed()) {
+			while (keyScaleYUp.wasPressed()) {
 				Config.scaleY -= 0.1 + multiplier;
 			}
-			while (keyBindingKey3.wasPressed()) {
+			while (keyScaleYDown.wasPressed()) {
 				Config.scaleY += 0.1 + multiplier;
 			}
 
-			while (keyBindingKey0.wasPressed()) {
+			while (keyRenderThroughBlocks.wasPressed()) {
 				Config.renderThroughBlocks = !Config.renderThroughBlocks;
 				client.player.sendMessage(Text.of("[" + MOD_NAME + "] Render Through Blocks: " + Config.renderThroughBlocks), false);
 			}
-			while (keyBindingKeyDot.wasPressed()) {
+			while (keySetPositionToPlayer.wasPressed()) {
 				//get client position
 				Config.positionX = (float) client.player.getX();
 				Config.positionY = (float) client.player.getY();
@@ -154,31 +170,21 @@ public class ImageRef implements ModInitializer {
 		});
 	}
 
-	private String getFacing(float yaw) {
-		String facing = "?";
-		if (yaw > -45 && yaw < 45) {
-			facing = "S";
-		}
-		if (yaw > 45 && yaw < 135) {
-			facing = "W";
-		}
-		if (yaw > 135 || yaw < -135) {
-			facing = "N";
-		}
-		if (yaw > -135 && yaw < -45) {
-			facing = "E";
-		}
-		return facing;
+	enum Direction {
+		NORTH, EAST, SOUTH, WEST
 	}
 
-	private String getUpDown(float pitch) {
-		String upDown = "N";
-		if (pitch >= 45) {
-			upDown = "U";
-		} else if (pitch <= -45) {
-			upDown = "D";
+	private Direction getDirection(float yaw) {		
+		if (yaw > -45 && yaw < 45) {
+			return Direction.SOUTH;
 		}
-		return upDown;
+		if (yaw > 45 && yaw < 135) {
+			return Direction.WEST;
+		}
+		if (yaw > 135 || yaw < -135) {
+			return Direction.NORTH;
+		}
+		return Direction.EAST;
 	}
 
 	private void drawImage(WorldRenderContext context, Boolean renderThroughBlocks, float scaleX, float scaleY, float x,
@@ -213,12 +219,11 @@ public class ImageRef implements ModInitializer {
 		}
 
 		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-		buffer.vertex(positionMatrix, 0, scaleY, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
-		buffer.vertex(positionMatrix, 0, 0, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
-		buffer.vertex(positionMatrix, scaleX, 0, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
-		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
-
-		// create texture by loading image from asset path, then register the texture
+		// add vertices in a rectangle from -scale to +scale
+		buffer.vertex(positionMatrix, -scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f).next();
+		buffer.vertex(positionMatrix, -scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f).next();
+		buffer.vertex(positionMatrix, scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f).next();
+		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f).next();
 
 		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
 		RenderSystem.setShaderTexture(0, new Identifier(MOD_ID, assetPath));
