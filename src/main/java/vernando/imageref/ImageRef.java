@@ -58,6 +58,8 @@ public class ImageRef implements ModInitializer {
 	private static KeyBinding keyRenderThroughBlocks;
 	private static KeyBinding keySetPositionToPlayer;
 	private static KeyBinding keyCycleNextImage;
+	private static KeyBinding keyCycleOrientation;
+	private static KeyBinding keyToggleAlpha;
 
 	private void ScanFileSystemForImages() {
 		LOGGER.info("Scanning for images in config/" + MOD_ID);
@@ -95,6 +97,8 @@ public class ImageRef implements ModInitializer {
 		keyRenderThroughBlocks = KeyBindingHelper.registerKeyBinding(new KeyBinding("Render Through Blocks", GLFW.GLFW_KEY_KP_0, "Image Ref"));
 		keySetPositionToPlayer = KeyBindingHelper.registerKeyBinding(new KeyBinding("Set Position To Player", GLFW.GLFW_KEY_KP_DECIMAL, "Image Ref"));		
 		keyCycleNextImage = KeyBindingHelper.registerKeyBinding(new KeyBinding("Cycle Next Image", GLFW.GLFW_KEY_KP_MULTIPLY, "Image Ref"));
+		keyCycleOrientation = KeyBindingHelper.registerKeyBinding(new KeyBinding("Cycle Orientation", GLFW.GLFW_KEY_KP_DIVIDE, "Image Ref"));
+		keyToggleAlpha = KeyBindingHelper.registerKeyBinding(new KeyBinding("Toggle Alpha", GLFW.GLFW_KEY_KP_SUBTRACT, "Image Ref"));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
@@ -195,6 +199,44 @@ public class ImageRef implements ModInitializer {
 				activeReferenceImage = referenceImages.get(index);			
 				thumbnailDisplayTimer = 20f;	
 			}
+			while (keyCycleOrientation.wasPressed()) {
+				// rotate clockwise based on the direction the player is facing
+				float pitch = client.getCameraEntity().getPitch();
+				if (pitch >= 45) {
+					activeReferenceImage.rotationY += 90;
+					if (activeReferenceImage.rotationY >= 360) {
+						activeReferenceImage.rotationY = 0;
+					}
+				} else if (pitch <= -45) {
+					activeReferenceImage.rotationY -= 90;
+					if (activeReferenceImage.rotationY <= 0) {
+						activeReferenceImage.rotationY = 360;
+					}					
+				} else if (direction == Direction.NORTH) {
+					activeReferenceImage.rotationZ += 90;
+					if (activeReferenceImage.rotationZ >= 360) {
+						activeReferenceImage.rotationZ = 0;
+					}
+				} else if (direction == Direction.EAST) {
+					activeReferenceImage.rotationX += 90;
+					if (activeReferenceImage.rotationX >= 360) {
+						activeReferenceImage.rotationX = 0;
+					}
+				} else if (direction == Direction.SOUTH) {
+					activeReferenceImage.rotationZ -= 90;
+					if (activeReferenceImage.rotationZ <= 0) {
+						activeReferenceImage.rotationZ = 360;
+					}
+				} else if (direction == Direction.WEST) {
+					activeReferenceImage.rotationX -= 90;
+					if (activeReferenceImage.rotationX <= 0) {
+						activeReferenceImage.rotationX = 360;
+					}
+				}			
+			}
+			while (keyToggleAlpha.wasPressed()) {
+				activeReferenceImage.alpha = activeReferenceImage.alpha == 1.0f ? 0.5f : 1.0f;
+			}
 		});
 
 		WorldRenderEvents.END.register(context -> {
@@ -215,8 +257,6 @@ public class ImageRef implements ModInitializer {
 
 			if (activeReferenceImage != null && thumbnailDisplayTimer > 0) {
 				thumbnailDisplayTimer -= tickDelta;
-				LOGGER.info("timer: " + thumbnailDisplayTimer);
-
 				activeReferenceImage.renderThumbnail(drawContext);
 			}
 		});
