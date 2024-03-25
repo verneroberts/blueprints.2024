@@ -4,35 +4,17 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.RotationAxis;
-import net.minecraft.util.math.Vec3d;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.GL11;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.mojang.blaze3d.systems.RenderSystem;
 
 public class ImageRef implements ModInitializer {	
 	public static final String MOD_ID = "image-ref";
@@ -61,10 +43,16 @@ public class ImageRef implements ModInitializer {
 	private static KeyBinding keyCycleOrientation;
 	private static KeyBinding keyToggleAlpha;
 
-	private void ScanFileSystemForImages() {
-		LOGGER.info("Scanning for images in config/" + MOD_ID);
+	private void ScanFileSystemForImages(String worldString, String dimension) {
+		worldString = worldString.replace(":", "_").trim();
+		String fullPath = "config/" + MOD_ID + "/" + worldString + "/" + dimension;
+
+		LOGGER.info("Scanning for images in " + fullPath);
 		referenceImages = new ArrayList<ReferenceImage>();
-		File folder = new File("config/" + MOD_ID);
+		File folder = new File(fullPath);
+		if (!folder.exists()) {
+			folder.mkdirs();
+		}
 		File[] listOfFiles = folder.listFiles();
 		for (File file : listOfFiles) {
 			if (file.isFile()) {
@@ -72,13 +60,13 @@ public class ImageRef implements ModInitializer {
 				if (filename.endsWith(".jpg") || filename.endsWith(".png")) {					
 					ReferenceImage referenceImage = new ReferenceImage();
 					referenceImage.LoadConfig();					
-					//generate id from timestamp
 					String id = Long.toString(System.currentTimeMillis());
-					referenceImage.registerTexture(MinecraftClient.getInstance(), "config/" + MOD_ID + "/" + filename, id);
+					referenceImage.registerTexture(MinecraftClient.getInstance(), fullPath + "/" + filename, id);
 					referenceImages.add(referenceImage);
 				}
 			}
 		}
+		activeReferenceImage = referenceImages.size() > 0 ? referenceImages.get(0) : null;
 	}
 
 	@Override
@@ -112,7 +100,7 @@ public class ImageRef implements ModInitializer {
 			}
 
 			if (referenceImages == null) {
-				ScanFileSystemForImages();
+				ScanFileSystemForImages(getWorldOrServerName(), client.world.getDimensionKey().getValue().toString().split(":")[1]);
 			}
 			if (activeReferenceImage == null && referenceImages.size() > 0) {
 				activeReferenceImage = referenceImages.get(0);
@@ -195,6 +183,10 @@ public class ImageRef implements ModInitializer {
 				index++;
 				if (index >= referenceImages.size()) {
 					index = 0;
+				}
+				if (referenceImages.size() == 0) {
+					activeReferenceImage = null;
+					return;
 				}
 				activeReferenceImage = referenceImages.get(index);			
 				thumbnailDisplayTimer = 20f;	
@@ -288,5 +280,18 @@ public class ImageRef implements ModInitializer {
 			return Direction.NORTH;
 		}
 		return Direction.EAST;
+	}
+
+	public String getWorldOrServerName() {
+		MinecraftClient client = MinecraftClient.getInstance();
+		if (client.isInSingleplayer())
+        {
+			return client.getServer().getSaveProperties().getLevelName();
+        }
+        else
+        {
+			return client.getCurrentServerEntry().address;
+        }
+
 	}
 }
