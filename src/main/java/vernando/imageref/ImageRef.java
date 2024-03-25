@@ -3,6 +3,7 @@ package vernando.imageref;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
@@ -23,6 +24,7 @@ import net.minecraft.util.math.Vec3d;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 
 import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
@@ -33,15 +35,16 @@ import org.slf4j.LoggerFactory;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 public class ImageRef implements ModInitializer {	
-	private static final String MOD_ID = "image-ref";
-	private static final String MOD_NAME = "Vernando's Image Ref";
+	public static final String MOD_ID = "image-ref";
+	public static final String MOD_NAME = "Vernando's Image Ref";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);	
-
-	private NativeImage image;
-	private NativeImageBackedTexture texture;
-	private MinecraftClient client;
+	
+	private ReferenceImage activeReferenceImage;
+	private ArrayList<ReferenceImage> referenceImages;
 	
 	private static boolean visible = false;
+
+	private float thumbnailDisplayTimer = 20f;
 
 	private static KeyBinding keyNudgeLeft;
 	private static KeyBinding keyNudgeRight;
@@ -54,6 +57,27 @@ public class ImageRef implements ModInitializer {
 	private static KeyBinding keyNudgeMultiply;
 	private static KeyBinding keyRenderThroughBlocks;
 	private static KeyBinding keySetPositionToPlayer;
+	private static KeyBinding keyCycleNextImage;
+
+	private void ScanFileSystemForImages() {
+		LOGGER.info("Scanning for images in config/" + MOD_ID);
+		referenceImages = new ArrayList<ReferenceImage>();
+		File folder = new File("config/" + MOD_ID);
+		File[] listOfFiles = folder.listFiles();
+		for (File file : listOfFiles) {
+			if (file.isFile()) {
+				String filename = file.getName();
+				if (filename.endsWith(".jpg") || filename.endsWith(".png")) {					
+					ReferenceImage referenceImage = new ReferenceImage();
+					referenceImage.LoadConfig();					
+					//generate id from timestamp
+					String id = Long.toString(System.currentTimeMillis());
+					referenceImage.registerTexture(MinecraftClient.getInstance(), "config/" + MOD_ID + "/" + filename, id);
+					referenceImages.add(referenceImage);
+				}
+			}
+		}
+	}
 
 	@Override
 	public void onInitialize() {
@@ -69,7 +93,8 @@ public class ImageRef implements ModInitializer {
 		keyScaleYDown = KeyBindingHelper.registerKeyBinding(new KeyBinding("Scale Y down", GLFW.GLFW_KEY_KP_3, "Image Ref"));
 		keyNudgeMultiply = KeyBindingHelper.registerKeyBinding(new KeyBinding("Nudge Embiggen Modifier", GLFW.GLFW_KEY_KP_5, "Image Ref"));
 		keyRenderThroughBlocks = KeyBindingHelper.registerKeyBinding(new KeyBinding("Render Through Blocks", GLFW.GLFW_KEY_KP_0, "Image Ref"));
-		keySetPositionToPlayer = KeyBindingHelper.registerKeyBinding(new KeyBinding("Set Position To Player", GLFW.GLFW_KEY_KP_DECIMAL, "Image Ref"));
+		keySetPositionToPlayer = KeyBindingHelper.registerKeyBinding(new KeyBinding("Set Position To Player", GLFW.GLFW_KEY_KP_DECIMAL, "Image Ref"));		
+		keyCycleNextImage = KeyBindingHelper.registerKeyBinding(new KeyBinding("Cycle Next Image", GLFW.GLFW_KEY_KP_MULTIPLY, "Image Ref"));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
@@ -82,7 +107,13 @@ public class ImageRef implements ModInitializer {
 				return;
 			}
 
-			this.client = client;
+			if (referenceImages == null) {
+				ScanFileSystemForImages();
+			}
+			if (activeReferenceImage == null && referenceImages.size() > 0) {
+				activeReferenceImage = referenceImages.get(0);
+				thumbnailDisplayTimer = 1000f;
+			}
 
 			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals("Painting") || client.player.getOffHandStack().getName().getString().equals("Painting");
 
@@ -104,44 +135,44 @@ public class ImageRef implements ModInitializer {
 			
 			float multiplier = keyNudgeMultiply.isPressed() ? 9.9f : 0f;
 			while (keyNudgeDown.wasPressed()) {
-				Config.positionY -= 0.1 + multiplier;
+				activeReferenceImage.positionY -= 0.1 + multiplier;
 			}
 			while (keyNudgeUp.wasPressed()) {
-				Config.positionY += 0.1 + multiplier;
+				activeReferenceImage.positionY += 0.1 + multiplier;
 			}
 			while (keyNudgeLeft.wasPressed()) {
 				if (direction == Direction.NORTH) {
-					Config.positionX -= 0.1 + multiplier;
+					activeReferenceImage.positionX -= 0.1 + multiplier;
 				} else if (direction == Direction.EAST) {
-					Config.positionZ -= 0.1 + multiplier;
+					activeReferenceImage.positionZ -= 0.1 + multiplier;
 				} else if (direction == Direction.SOUTH) {
-					Config.positionX += 0.1 + multiplier;
+					activeReferenceImage.positionX += 0.1 + multiplier;
 				} else if (direction == Direction.WEST) {
-					Config.positionZ += 0.1 + multiplier;
+					activeReferenceImage.positionZ += 0.1 + multiplier;
 				}		
 			}
 			while (keyNudgeRight.wasPressed()) {
 				if (direction == Direction.NORTH) {
-					Config.positionX += 0.1 + multiplier;
+					activeReferenceImage.positionX += 0.1 + multiplier;
 				} else if (direction == Direction.EAST) {
-					Config.positionZ += 0.1 + multiplier;
+					activeReferenceImage.positionZ += 0.1 + multiplier;
 				} else if (direction == Direction.SOUTH) {
-					Config.positionX -= 0.1 + multiplier;
+					activeReferenceImage.positionX -= 0.1 + multiplier;
 				} else if (direction == Direction.WEST) {
-					Config.positionZ -= 0.1 + multiplier;
+					activeReferenceImage.positionZ -= 0.1 + multiplier;
 				}
 			}
 			while (keyScaleXUp.wasPressed()) {
-				Config.scaleX -= 0.1 + multiplier;				
+				activeReferenceImage.scaleX -= 0.1 + multiplier;				
 			}
 			while (keyScaleXDown.wasPressed()) {
-				Config.scaleX += 0.1 + multiplier;
+				activeReferenceImage.scaleX += 0.1 + multiplier;
 			}
 			while (keyScaleYUp.wasPressed()) {
-				Config.scaleY -= 0.1 + multiplier;
+				activeReferenceImage.scaleY -= 0.1 + multiplier;
 			}
 			while (keyScaleYDown.wasPressed()) {
-				Config.scaleY += 0.1 + multiplier;
+				activeReferenceImage.scaleY += 0.1 + multiplier;
 			}
 
 			while (keyRenderThroughBlocks.wasPressed()) {
@@ -150,28 +181,43 @@ public class ImageRef implements ModInitializer {
 			}
 			while (keySetPositionToPlayer.wasPressed()) {
 				//get client position
-				Config.positionX = (float) client.player.getX();
-				Config.positionY = (float) client.player.getY();
-				Config.positionZ = (float) client.player.getZ();				
+				activeReferenceImage.positionX = (float) client.player.getX();
+				activeReferenceImage.positionY = (float) client.player.getY();
+				activeReferenceImage.positionZ = (float) client.player.getZ();				
 				client.player.sendMessage(Text.of("[" + MOD_NAME + "] Changed position to current player position: " + Config.positionX + ", " + Config.positionY + ", " + Config.positionZ), false);
 			}			
+			while (keyCycleNextImage.wasPressed()) {
+				int index = referenceImages.indexOf(activeReferenceImage);
+				index++;
+				if (index >= referenceImages.size()) {
+					index = 0;
+				}
+				activeReferenceImage = referenceImages.get(index);			
+				thumbnailDisplayTimer = 20f;	
+			}
 		});
 
 		WorldRenderEvents.END.register(context -> {
 			Boolean renderThroughBlocks = Config.renderThroughBlocks;
-			float scaleX = Config.scaleX;
-			float scaleY = Config.scaleY;
-			float x = Config.positionX;
-			float y = Config.positionY;
-			float z = Config.positionZ;
-			float rotationX = Config.rotationX;
-			float rotationY = Config.rotationY;
-			float rotationZ = Config.rotationZ;
-			float alpha = Config.alpha;
-			String assetPath = Config.imagePath;
 
 			if (visible) {
-				drawImage(context, renderThroughBlocks, scaleX, scaleY, x, y, z, rotationX, rotationY, rotationZ, alpha, assetPath);
+				for (ReferenceImage referenceImage : referenceImages) {
+					referenceImage.render(context, renderThroughBlocks);
+				}
+			}
+		});
+
+		HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
+
+			if (!visible) {
+				return;
+			}
+
+			if (activeReferenceImage != null && thumbnailDisplayTimer > 0) {
+				thumbnailDisplayTimer -= tickDelta;
+				LOGGER.info("timer: " + thumbnailDisplayTimer);
+
+				activeReferenceImage.renderThumbnail(drawContext);
 			}
 		});
 	}
@@ -202,74 +248,5 @@ public class ImageRef implements ModInitializer {
 			return Direction.NORTH;
 		}
 		return Direction.EAST;
-	}
-
-	private void drawImage(WorldRenderContext context, Boolean renderThroughBlocks, float scaleX, float scaleY, float x,
-			float y, float z, float rotationX, float rotationY, float rotationZ, float alpha, String assetPath) {
-
-		
-		if (texture == null) {
-			try {
-				// load test.png from config folder as a stream
-				image = NativeImage.read(new FileInputStream(new File("config/" + MOD_ID + "/test.jpg")));
-				texture = new NativeImageBackedTexture(image);		
-				this.client.getTextureManager().registerTexture(new Identifier(MOD_ID, "test"), texture);		
-				
-			} catch (Exception e) {
-				LOGGER.error("Failed to load image: " + assetPath);
-				LOGGER.error(e.getMessage());
-				return;
-			}
-		}
-
-		// ensure [a-z0-9/._-] character in path of location
-		if (!assetPath.matches("^[a-z0-9/._-]+$")) {
-			LOGGER.error("Invalid asset path: " + assetPath);
-			return;
-		}
-
-		Camera camera = context.camera();
-		Vec3d targetPosition = new Vec3d(x, y, z);
-		Vec3d transformedPosition = targetPosition.subtract(camera.getPos());
-
-		MatrixStack matrixStack = new MatrixStack();
-		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
-		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
-		matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z);
-
-		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotationX));
-		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotationY));
-		matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotationZ));
-
-		Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
-
-		if (alpha < 1f) {
-			RenderSystem.enableBlend();
-			RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		}
-
-		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-		// add vertices in a rectangle from -scale to +scale
-		buffer.vertex(positionMatrix, -scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f).next();
-		buffer.vertex(positionMatrix, -scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f).next();
-		buffer.vertex(positionMatrix, scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f).next();
-		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f).next();
-
-		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
-		RenderSystem.setShaderTexture(0, new Identifier(MOD_ID, "test"));
-		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
-
-		if (renderThroughBlocks) {
-			RenderSystem.disableCull();
-			RenderSystem.depthFunc(GL11.GL_ALWAYS);
-		}
-
-		tessellator.draw();
-
-		RenderSystem.depthFunc(GL11.GL_LEQUAL);
-		RenderSystem.enableCull();
-		matrixStack.pop();
 	}
 }
