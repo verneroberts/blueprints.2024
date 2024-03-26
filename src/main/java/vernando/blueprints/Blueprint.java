@@ -185,7 +185,7 @@ public class Blueprint {
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1);
 	}
 
-    public void renderThumbnail(DrawContext drawContext) {
+    public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
 		if (texture == null) {
 			return;
 		}
@@ -196,10 +196,10 @@ public class Blueprint {
 		BufferBuilder buffer = tessellator.getBuffer();
 
 		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-		buffer.vertex(transformationMatrix, 20, 20, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
-		buffer.vertex(transformationMatrix, 20, 60, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
-		buffer.vertex(transformationMatrix, 60, 60, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
-		buffer.vertex(transformationMatrix, 60, 20, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
+		buffer.vertex(transformationMatrix, x, y, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
+		buffer.vertex(transformationMatrix, x, y+height, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
+		buffer.vertex(transformationMatrix, x+width, y+height, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
+		buffer.vertex(transformationMatrix, x+width, y, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
 
 		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
 		RenderSystem.setShaderTexture(0, textureId);
@@ -271,5 +271,10 @@ public class Blueprint {
 
     public String getName() {
         return texturePath.split("/")[texturePath.split("/").length-1];
+    }
+
+    public void ToggleVisibility() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'ToggleVisibility'");
     }
 }

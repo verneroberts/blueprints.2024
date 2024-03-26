@@ -20,47 +20,44 @@ public class MainConfigScreen extends Screen {
     this.blueprints = blueprints;
     this.main = main;
   }
- 
+
   @Override
   protected void init() {
 
     // main config section
     addDrawableChild(
-      ButtonWidget.builder(Text.literal("Rescan folder"), b -> {
-        main.ScanFileSystemForImages();
-      })
-        .dimensions(20, 20, 60, 20)
-        .build()
-    );
+        ButtonWidget.builder(Text.literal("Reload"), b -> {
+          main.ScanFileSystemForImages();
+        })
+            .dimensions(20, 10, 60, 20)
+            .build());
 
     // renderThroughBlocks
     addDrawableChild(
-      ButtonWidget.builder(Text.literal("Render through blocks"), b -> {
-        main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
-      })
-        .dimensions(20, 40, 60, 20)
-        .build()
-    );
+        ButtonWidget.builder(Text.literal("Render through blocks"), b -> {
+          main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
+        })
+            .dimensions(90, 10, 120, 20)
+            .build());
 
     // blueprint list
     blueprints.forEach(blueprint -> {
-      ButtonWidget button = ButtonWidget.builder(Text.literal("Configure"), b -> {
-        // launch blueprint config screen
+      addDrawableChild(ButtonWidget.builder(Text.literal("Configure"), b -> {
         client.setScreen(new BlueprintConfigScreen(blueprint, this));
       })
-        .dimensions(width-80, blueprints.indexOf(blueprint)*20 , 60, 20)
-        .build();
-      addDrawableChild(button);
+          .dimensions(width - 80, 40 + blueprints.indexOf(blueprint) * 24, 60, 20)
+          .build());
     });
   }
 
-   @Override
+  @Override
   public void render(DrawContext context, int mouseX, int mouseY, float delta) {
     super.render(context, mouseX, mouseY, delta);
 
     blueprints.forEach((blueprint) -> {
-      context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), 20, 10+blueprints.indexOf(blueprint)*20, 0xffffff);
-      context.drawTexture(blueprint.textureId, 20, 20+blueprints.indexOf(blueprint)*20, 0, 0, 16, 16);
+      int y = 40 + blueprints.indexOf(blueprint) * 24;
+      context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), 50, y + 10, 0xffffff);
+      blueprint.renderThumbnail(context, 20, y + 1, 18, 18);
     });
   }
 }
