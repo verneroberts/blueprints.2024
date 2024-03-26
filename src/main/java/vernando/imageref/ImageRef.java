@@ -43,6 +43,7 @@ public class ImageRef implements ModInitializer {
 	private static KeyBinding keyCycleNextImage;
 	private static KeyBinding keyCycleOrientation;
 	private static KeyBinding keyToggleAlpha;
+	private static KeyBinding keyLaunchConfig;
 
 	private String currentWorld = "";
 	private String currentDimension = "";
@@ -88,6 +89,7 @@ public class ImageRef implements ModInitializer {
 		keyCycleNextImage = KeyBindingHelper.registerKeyBinding(new KeyBinding("Cycle Next Image", GLFW.GLFW_KEY_KP_MULTIPLY, "Image Ref"));
 		keyCycleOrientation = KeyBindingHelper.registerKeyBinding(new KeyBinding("Cycle Orientation", GLFW.GLFW_KEY_KP_DIVIDE, "Image Ref"));
 		keyToggleAlpha = KeyBindingHelper.registerKeyBinding(new KeyBinding("Toggle Alpha", GLFW.GLFW_KEY_KP_SUBTRACT, "Image Ref"));		
+		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, "Image Ref"));
 		
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
@@ -118,6 +120,10 @@ public class ImageRef implements ModInitializer {
 				thumbnailDisplayTimer = 1000f;
 			}
 
+			while (keyLaunchConfig.wasPressed()) {
+				MinecraftClient.getInstance().setScreen(new ConfigScreen(referenceImages));
+			}
+
 			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals("Painting") || client.player.getOffHandStack().getName().getString().equals("Painting");
 
 			if (isHoldingPainting) {
@@ -138,7 +144,7 @@ public class ImageRef implements ModInitializer {
 			Direction directionFacing = getDirection(yaw, pitch);
 
 			Boolean multiply = keyNudgeMultiply.isPressed();
-			while (keyNudgeDown.wasPressed()) {				
+			while (keyNudgeDown.wasPressed()) {	
 				activeReferenceImage.NudgePosition(Direction.DOWN, multiply);
 			}
 			while (keyNudgeUp.wasPressed()) {
