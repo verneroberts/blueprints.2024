@@ -19,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 public class ImageRef implements ModInitializer {	
 	public static final String MOD_ID = "image-ref";
-	public static final String MOD_NAME = "Vernando's Image Ref";
+	public static final String MOD_NAME = "Image Ref";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);	
 	
 	private ReferenceImage activeReferenceImage;
@@ -43,6 +43,9 @@ public class ImageRef implements ModInitializer {
 	private static KeyBinding keyCycleNextImage;
 	private static KeyBinding keyCycleOrientation;
 	private static KeyBinding keyToggleAlpha;
+
+	private String currentWorld = "";
+	private String currentDimension = "";
 
 	private void ScanFileSystemForImages(String worldString, String dimension) {
 		worldString = worldString.replace(":", "_").trim();
@@ -84,8 +87,8 @@ public class ImageRef implements ModInitializer {
 		keySetPositionToPlayer = KeyBindingHelper.registerKeyBinding(new KeyBinding("Set Position To Player", GLFW.GLFW_KEY_KP_DECIMAL, "Image Ref"));		
 		keyCycleNextImage = KeyBindingHelper.registerKeyBinding(new KeyBinding("Cycle Next Image", GLFW.GLFW_KEY_KP_MULTIPLY, "Image Ref"));
 		keyCycleOrientation = KeyBindingHelper.registerKeyBinding(new KeyBinding("Cycle Orientation", GLFW.GLFW_KEY_KP_DIVIDE, "Image Ref"));
-		keyToggleAlpha = KeyBindingHelper.registerKeyBinding(new KeyBinding("Toggle Alpha", GLFW.GLFW_KEY_KP_SUBTRACT, "Image Ref"));
-
+		keyToggleAlpha = KeyBindingHelper.registerKeyBinding(new KeyBinding("Toggle Alpha", GLFW.GLFW_KEY_KP_SUBTRACT, "Image Ref"));		
+		
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null) {
 				return;
@@ -96,10 +99,20 @@ public class ImageRef implements ModInitializer {
 			if (client.options == null) {
 				return;
 			}
+			
+			String world = getWorldOrServerName();
+			String dimension = client.world.getDimensionKey().getValue().toString().split(":")[1];
+			if (!world.equals(currentWorld) || !dimension.equals(currentDimension)) {
+				LOGGER.info("World changed to " + world + " dimension " + dimension);
+				currentWorld = world;
+				currentDimension = dimension;
+				ScanFileSystemForImages(world, dimension);
+			}
 
 			if (referenceImages == null) {
-				ScanFileSystemForImages(getWorldOrServerName(), client.world.getDimensionKey().getValue().toString().split(":")[1]);
+				return;
 			}
+
 			if (activeReferenceImage == null && referenceImages.size() > 0) {
 				activeReferenceImage = referenceImages.get(0);
 				thumbnailDisplayTimer = 1000f;
@@ -124,8 +137,6 @@ public class ImageRef implements ModInitializer {
 			float pitch = client.getCameraEntity().getPitch();
 			Direction directionFacing = getDirection(yaw, pitch);
 
-			
-			float multiplier = keyNudgeMultiply.isPressed() ? 9.9f : 0f;
 			Boolean multiply = keyNudgeMultiply.isPressed();
 			while (keyNudgeDown.wasPressed()) {				
 				activeReferenceImage.NudgePosition(Direction.DOWN, multiply);
@@ -231,6 +242,7 @@ public class ImageRef implements ModInitializer {
 				activeReferenceImage.ToggleAlpha();
 			}
 		});
+		
 
 		WorldRenderEvents.END.register(context -> {
 			Boolean renderThroughBlocks = Config.renderThroughBlocks;
