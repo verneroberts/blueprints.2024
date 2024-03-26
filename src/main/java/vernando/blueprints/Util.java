@@ -1,4 +1,4 @@
-package vernando.imageref;
+package vernando.blueprints;
 
 import net.minecraft.client.MinecraftClient;
 import java.io.File;

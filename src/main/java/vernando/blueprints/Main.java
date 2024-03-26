@@ -1,4 +1,4 @@
-package vernando.imageref;
+package vernando.blueprints;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
@@ -16,7 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Main implements ModInitializer {	
-	public static final String MOD_ID = "image-ref";
+	public static final String MOD_ID = "blueprints";
 	public static final String MOD_NAME = "Blueprints";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);	
 	
@@ -26,8 +26,9 @@ public class Main implements ModInitializer {
 
 	private String currentWorld = "";
 	private String currentDimension = "";
+	private boolean renderThroughBlocks;
 
-	private ArrayList<Blueprint> ScanFileSystemForImages(String worldString, String dimension) {
+	public ArrayList<Blueprint> ScanFileSystemForImages() {
 		String fullPath = Util.GetPerWorldDimensionConfigPath();
 		LOGGER.info("Scanning for images in " + fullPath);
 		blueprints = new ArrayList<Blueprint>();
@@ -47,8 +48,6 @@ public class Main implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		Config.init(MOD_ID, Config.class);
-
 		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, "Image Ref"));
 		
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -62,7 +61,7 @@ public class Main implements ModInitializer {
 				LOGGER.info("World changed to " + world + " dimension " + dimension);
 				currentWorld = world;
 				currentDimension = dimension;
-				ScanFileSystemForImages(world, dimension);
+				ScanFileSystemForImages();
 			}
 
 			if (blueprints == null) {
@@ -70,7 +69,7 @@ public class Main implements ModInitializer {
 			}
 
 			if (keyLaunchConfig.wasPressed()) {
-				MinecraftClient.getInstance().setScreen(new MainConfigScreen(blueprints));
+				MinecraftClient.getInstance().setScreen(new MainConfigScreen(blueprints, this));
 			}
 
 			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals("Painting") || client.player.getOffHandStack().getName().getString().equals("Painting");
@@ -89,8 +88,6 @@ public class Main implements ModInitializer {
 		});			
 
 		WorldRenderEvents.END.register(context -> {
-			Boolean renderThroughBlocks = Config.renderThroughBlocks;
-
 			if (visible) {
 				for (Blueprint blueprint : blueprints) {
 					blueprint.render(context, renderThroughBlocks);
@@ -104,4 +101,12 @@ public class Main implements ModInitializer {
 		// 	}
 		// });
 	}
+
+	public boolean getRenderThroughBlocks() {
+		return renderThroughBlocks;
+	}
+
+    public void setRenderThroughBlocks(boolean b) {
+		renderThroughBlocks = b;
+    }
 }

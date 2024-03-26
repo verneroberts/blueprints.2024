@@ -1,6 +1,6 @@
 {
 	"schemaVersion": 1,
-	"id": "image-ref",
+	"id": "blueprints",
 	"version": "${version}",
 	"name": "FHM_Vernando's Blueprints",
 	"description": "Project blueprints into your world",
@@ -12,11 +12,11 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/image-ref/icon.png",
+	"icon": "assets/blueprints/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"vernando.imageref.Main"
+			"vernando.blueprints.Main"
 		]
 	},
 	"mixins": [
