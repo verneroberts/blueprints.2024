@@ -2,8 +2,8 @@
 	"schemaVersion": 1,
 	"id": "image-ref",
 	"version": "${version}",
-	"name": "FHM_Vernando's Image Ref",
-	"description": "Put reference images in your world",
+	"name": "FHM_Vernando's Blueprints",
+	"description": "Project blueprints into your world",
 	"authors": [
 		"FHM_Vernando"
 	],
@@ -16,11 +16,10 @@
 	"environment": "*",
 	"entrypoints": {
 		"main": [
-			"vernando.imageref.ImageRef"
+			"vernando.imageref.Main"
 		]
 	},
 	"mixins": [
-		"image-ref.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.15.7",
