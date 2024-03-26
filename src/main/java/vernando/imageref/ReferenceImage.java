@@ -184,6 +184,7 @@ public class ReferenceImage {
 		RenderSystem.depthFunc(GL11.GL_LEQUAL);
 		RenderSystem.enableCull();
 		matrixStack.pop();
+		RenderSystem.setShaderColor(1f, 1f, 1f, 1);
 	}
 
     public void renderThumbnail(DrawContext drawContext) {
@@ -206,7 +207,7 @@ public class ReferenceImage {
 		RenderSystem.setShaderTexture(0, textureId);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
-		tessellator.draw();
+		tessellator.draw();		
 	}
 
 	public void NudgeRotation(Axis axis, Boolean multiply) {
@@ -272,5 +273,9 @@ public class ReferenceImage {
 				scaleY += amount;
 				break;	
 		}
+    }
+
+    public String getName() {
+        return texturePath.split("/")[texturePath.split("/").length-1];
     }
 }
