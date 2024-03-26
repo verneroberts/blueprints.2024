@@ -8,6 +8,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.Direction.Axis;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -58,10 +59,7 @@ public class ImageRef implements ModInitializer {
 			if (file.isFile()) {
 				String filename = file.getName();
 				if (filename.endsWith(".jpg") || filename.endsWith(".png")) {					
-					ReferenceImage referenceImage = new ReferenceImage();
-					referenceImage.LoadConfig();					
-					String id = Long.toString(System.currentTimeMillis());
-					referenceImage.registerTexture(MinecraftClient.getInstance(), fullPath + "/" + filename, id);
+					ReferenceImage referenceImage = new ReferenceImage(fullPath + "/" + filename);
 					referenceImages.add(referenceImage);
 				}
 			}
@@ -123,48 +121,65 @@ public class ImageRef implements ModInitializer {
 			// work out the direction the player is facing and use that as the reference when tweaking the position
 			float yaw = client.getCameraEntity().getYaw();
 			yaw = fixYaw(yaw);
-			Direction direction = getDirection(yaw);			
+			float pitch = client.getCameraEntity().getPitch();
+			Direction directionFacing = getDirection(yaw, pitch);
+
 			
 			float multiplier = keyNudgeMultiply.isPressed() ? 9.9f : 0f;
-			while (keyNudgeDown.wasPressed()) {
-				activeReferenceImage.positionY -= 0.1 + multiplier;
+			Boolean multiply = keyNudgeMultiply.isPressed();
+			while (keyNudgeDown.wasPressed()) {				
+				activeReferenceImage.NudgePosition(Direction.DOWN, multiply);
 			}
 			while (keyNudgeUp.wasPressed()) {
-				activeReferenceImage.positionY += 0.1 + multiplier;
+				activeReferenceImage.NudgePosition(Direction.UP, multiply);
 			}
 			while (keyNudgeLeft.wasPressed()) {
-				if (direction == Direction.NORTH) {
-					activeReferenceImage.positionX -= 0.1 + multiplier;
-				} else if (direction == Direction.EAST) {
-					activeReferenceImage.positionZ -= 0.1 + multiplier;
-				} else if (direction == Direction.SOUTH) {
-					activeReferenceImage.positionX += 0.1 + multiplier;
-				} else if (direction == Direction.WEST) {
-					activeReferenceImage.positionZ += 0.1 + multiplier;
-				}		
+				switch (directionFacing) {
+					case NORTH:
+						activeReferenceImage.NudgePosition(Direction.WEST, multiply);
+						break;
+					case EAST:
+						activeReferenceImage.NudgePosition(Direction.NORTH, multiply);
+						break;
+					case SOUTH:
+						activeReferenceImage.NudgePosition(Direction.EAST, multiply);
+						break;
+					case WEST:
+						activeReferenceImage.NudgePosition(Direction.SOUTH, multiply);
+						break;
+					default:
+						break;
+				}
 			}
 			while (keyNudgeRight.wasPressed()) {
-				if (direction == Direction.NORTH) {
-					activeReferenceImage.positionX += 0.1 + multiplier;
-				} else if (direction == Direction.EAST) {
-					activeReferenceImage.positionZ += 0.1 + multiplier;
-				} else if (direction == Direction.SOUTH) {
-					activeReferenceImage.positionX -= 0.1 + multiplier;
-				} else if (direction == Direction.WEST) {
-					activeReferenceImage.positionZ -= 0.1 + multiplier;
+				switch (directionFacing) {
+					case NORTH:
+						activeReferenceImage.NudgePosition(Direction.EAST, multiply);
+						break;
+					case EAST:
+						activeReferenceImage.NudgePosition(Direction.SOUTH, multiply);
+						break;
+					case SOUTH:
+						activeReferenceImage.NudgePosition(Direction.WEST, multiply);
+						break;
+					case WEST:
+						activeReferenceImage.NudgePosition(Direction.NORTH, multiply);
+						break;
+					default:
+						break;
 				}
 			}
 			while (keyScaleXUp.wasPressed()) {
-				activeReferenceImage.scaleX -= 0.1 + multiplier;				
+				activeReferenceImage.NudgeScale(Axis.X, 1, multiply);
 			}
 			while (keyScaleXDown.wasPressed()) {
-				activeReferenceImage.scaleX += 0.1 + multiplier;
+				activeReferenceImage.NudgeScale(Axis.X, -1, multiply);
 			}
 			while (keyScaleYUp.wasPressed()) {
-				activeReferenceImage.scaleY -= 0.1 + multiplier;
+				activeReferenceImage.NudgeScale(Axis.Y, 1, multiply);
 			}
 			while (keyScaleYDown.wasPressed()) {
-				activeReferenceImage.scaleY += 0.1 + multiplier;
+				activeReferenceImage.NudgeScale(Axis.Y, -1, multiply);
 			}
 
 			while (keyRenderThroughBlocks.wasPressed()) {
@@ -172,11 +187,8 @@ public class ImageRef implements ModInitializer {
 				client.player.sendMessage(Text.of("[" + MOD_NAME + "] Render Through Blocks: " + Config.renderThroughBlocks), false);
 			}
 			while (keySetPositionToPlayer.wasPressed()) {
-				//get client position
-				activeReferenceImage.positionX = (float) client.player.getX();
-				activeReferenceImage.positionY = (float) client.player.getY();
-				activeReferenceImage.positionZ = (float) client.player.getZ();				
-				client.player.sendMessage(Text.of("[" + MOD_NAME + "] Changed position to current player position: " + Config.positionX + ", " + Config.positionY + ", " + Config.positionZ), false);
+				activeReferenceImage.SetPosition((float) client.player.getX(), (float) client.player.getY(), (float) client.player.getZ());
+				client.player.sendMessage(Text.of("[" + MOD_NAME + "] Changed position to current player position: " + client.player.getX() + ", " + client.player.getY() + ", " + client.player.getZ()), false);
 			}			
 			while (keyCycleNextImage.wasPressed()) {
 				int index = referenceImages.indexOf(activeReferenceImage);
@@ -193,41 +205,30 @@ public class ImageRef implements ModInitializer {
 			}
 			while (keyCycleOrientation.wasPressed()) {
 				// rotate clockwise based on the direction the player is facing
-				float pitch = client.getCameraEntity().getPitch();
-				if (pitch >= 45) {
-					activeReferenceImage.rotationY += 90;
-					if (activeReferenceImage.rotationY >= 360) {
-						activeReferenceImage.rotationY = 0;
-					}
-				} else if (pitch <= -45) {
-					activeReferenceImage.rotationY -= 90;
-					if (activeReferenceImage.rotationY <= 0) {
-						activeReferenceImage.rotationY = 360;
-					}					
-				} else if (direction == Direction.NORTH) {
-					activeReferenceImage.rotationZ += 90;
-					if (activeReferenceImage.rotationZ >= 360) {
-						activeReferenceImage.rotationZ = 0;
-					}
-				} else if (direction == Direction.EAST) {
-					activeReferenceImage.rotationX += 90;
-					if (activeReferenceImage.rotationX >= 360) {
-						activeReferenceImage.rotationX = 0;
-					}
-				} else if (direction == Direction.SOUTH) {
-					activeReferenceImage.rotationZ -= 90;
-					if (activeReferenceImage.rotationZ <= 0) {
-						activeReferenceImage.rotationZ = 360;
-					}
-				} else if (direction == Direction.WEST) {
-					activeReferenceImage.rotationX -= 90;
-					if (activeReferenceImage.rotationX <= 0) {
-						activeReferenceImage.rotationX = 360;
-					}
-				}			
+				switch (directionFacing) {
+					case NORTH:
+						activeReferenceImage.NudgeRotation(Axis.Y, multiply);
+						break;
+					case EAST:
+						activeReferenceImage.NudgeRotation(Axis.X, multiply);
+						break;
+					case SOUTH:
+						activeReferenceImage.NudgeRotation(Axis.Y, multiply);
+						break;
+					case WEST:
+						activeReferenceImage.NudgeRotation(Axis.X, multiply);
+						break;
+					case UP: 
+						activeReferenceImage.NudgeRotation(Axis.Z, multiply);
+						break;
+					case DOWN:
+						activeReferenceImage.NudgeRotation(Axis.Z, multiply);
+						break;				
+				}
 			}
+
 			while (keyToggleAlpha.wasPressed()) {
-				activeReferenceImage.alpha = activeReferenceImage.alpha == 1.0f ? 0.5f : 1.0f;
+				activeReferenceImage.ToggleAlpha();
 			}
 		});
 
@@ -266,10 +267,16 @@ public class ImageRef implements ModInitializer {
 	}
 
 	enum Direction {
-		NORTH, EAST, SOUTH, WEST
+		NORTH, EAST, SOUTH, WEST, UP, DOWN
 	}
 
-	private Direction getDirection(float yaw) {		
+	private Direction getDirection(float yaw, float pitch) {		
+		if (pitch >= 45) {
+			return Direction.UP;
+		}
+		if (pitch <= -45) {
+			return Direction.DOWN;
+		}
 		if (yaw > -45 && yaw < 45) {
 			return Direction.SOUTH;
 		}
