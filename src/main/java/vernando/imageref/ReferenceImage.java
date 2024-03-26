@@ -15,6 +15,8 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.Direction.Axis;
+import vernando.imageref.ImageRef.Direction;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -22,13 +24,20 @@ import java.io.FileInputStream;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
 import com.mojang.blaze3d.systems.RenderSystem;
+import java.io.FileReader;
 
 public class ReferenceImage {	
 
 	private NativeImageBackedTexture texture;
 	private Identifier textureId;
-		
+
+	private String texturePath;
+	private String id;
+
 	public float scaleX;
 	public float scaleY;
 	public float positionX;
@@ -38,32 +47,80 @@ public class ReferenceImage {
 	public float rotationY;
 	public float rotationZ;
 	public float alpha;
+	private String configFile;
 
-	public void LoadConfig() {
-		scaleX = Config.scaleX = 1.0f;
-		scaleY = Config.scaleY = 1.0f;
-		positionX = Config.positionX;
-		positionY = Config.positionY;
-		positionZ = Config.positionZ;
-		rotationX = Config.rotationX = 0.0f;
-		rotationY = Config.rotationY = 0.0f;
-		rotationZ = Config.rotationZ = 0.0f;
-		alpha = Config.alpha = 1.0f;
+	public ReferenceImage(String filename) {
+		texturePath = filename;
+		configFile = texturePath + ".json";
+		id = Long.toString(System.currentTimeMillis());
+		LoadConfig();
+		registerTexture();
 	}
 
-	public void SaveConfig() {
-		Config.scaleX = scaleX;
-		Config.scaleY = scaleY;
-		Config.positionX = positionX;
-		Config.positionY = positionY;
-		Config.positionZ = positionZ;
-		Config.rotationX = rotationX;
-		Config.rotationY = rotationY;
-		Config.rotationZ = rotationZ;
-		Config.alpha = alpha;
+	private void LoadConfig() {
+		MinecraftClient client = MinecraftClient.getInstance();
+		// start with default values:
+		scaleX = 1.0f;
+		scaleY = 1.0f;
+		positionX = (float)client.player.getX();
+		positionY = (float)client.player.getY();
+		positionZ = (float)client.player.getZ();
+		rotationX = 0.0f;
+		rotationY = 0.0f;
+		rotationZ = 0.0f;
+		alpha = 1.0f;
+
+		try {
+			File file = new File(configFile);
+			if (file.exists()) {
+				ImageRef.LOGGER.info("Loading config: " + configFile);
+				// use gson to load configFile
+				Gson gson = new Gson();
+				JsonReader reader = new JsonReader(new FileReader(configFile));
+				JsonObject obj = gson.fromJson(reader, JsonObject.class);
+				if (obj != null && obj.has("scaleX")) scaleX = obj.get("scaleX").getAsFloat();
+				if (obj != null && obj.has("scaleY")) scaleY = obj.get("scaleY").getAsFloat();
+				if (obj != null && obj.has("positionX")) positionX = obj.get("positionX").getAsFloat();
+				if (obj != null && obj.has("positionY")) positionY = obj.get("positionY").getAsFloat();
+				if (obj != null && obj.has("positionZ")) positionZ = obj.get("positionZ").getAsFloat();
+				if (obj != null && obj.has("rotationX")) rotationX = obj.get("rotationX").getAsFloat();
+				if (obj != null && obj.has("rotationY")) rotationY = obj.get("rotationY").getAsFloat();
+				if (obj != null && obj.has("rotationZ")) rotationZ = obj.get("rotationZ").getAsFloat();
+				if (obj != null && obj.has("alpha")) alpha = obj.get("alpha").getAsFloat();
+			} else {
+				ImageRef.LOGGER.info("Config file not found: " + configFile);
+			}
+		} catch (Exception e) {
+			ImageRef.LOGGER.error("Failed to load config: " + configFile);
+			ImageRef.LOGGER.error(e.getMessage());
+		}
+		SaveConfig();
+	}
+
+	private void SaveConfig() {
+		try {
+			ImageRef.LOGGER.info("Saving config: " + configFile);
+			JsonObject obj = new JsonObject();
+			obj.addProperty("scaleX", scaleX);
+			obj.addProperty("scaleY", scaleY);
+			obj.addProperty("positionX", positionX);
+			obj.addProperty("positionY", positionY);
+			obj.addProperty("positionZ", positionZ);
+			obj.addProperty("rotationX", rotationX);
+			obj.addProperty("rotationY", rotationY);
+			obj.addProperty("rotationZ", rotationZ);
+			obj.addProperty("alpha", alpha);
+			String json = obj.toString();
+			java.nio.file.Files.write(java.nio.file.Paths.get(configFile), json.getBytes());			
+		} catch (Exception e) {
+			ImageRef.LOGGER.error("Failed to save config: " + configFile);
+			ImageRef.LOGGER.error(e.getMessage());
+			return;
+		}
 	}	
 
-	public void registerTexture(MinecraftClient client, String texturePath, String id) {
+	private void registerTexture() {
+		MinecraftClient client = MinecraftClient.getInstance();
 		try {
 			ImageRef.LOGGER.info("Loading image: " + texturePath + " as " + id);
 			NativeImage image = NativeImage.read(new FileInputStream(new File(texturePath)));
@@ -150,5 +207,70 @@ public class ReferenceImage {
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
 		tessellator.draw();
-	 }
+	}
+
+	public void NudgeRotation(Axis axis, Boolean multiply) {
+		switch (axis) {
+			case X:
+				rotationX += 1 + (multiply ? 9 : 0);
+				break;
+			case Y:
+				rotationY += 1 + (multiply ? 9 : 0);
+				break;
+			case Z:
+				rotationZ += 1 + (multiply ? 9 : 0);
+				break;
+		}
+		SaveConfig();
+	}
+
+	public void NudgePosition(Direction direction, Boolean multiply) {
+		switch (direction) {
+			case UP:
+				positionY += 0.1 + (multiply ? 0.9 : 0);
+				break;
+			case DOWN:
+				positionY -= 0.1 + (multiply ? 0.9 : 0);
+				break;
+			case EAST:
+				positionX += 0.1 + (multiply ? 0.9 : 0);
+				break;
+			case WEST:
+				positionX -= 0.1 + (multiply ? 0.9 : 0);
+				break;
+			case NORTH:
+				positionZ -= 0.1 + (multiply ? 0.9 : 0);
+				break;
+			case SOUTH:
+				positionZ += 0.1 + (multiply ? 0.9 : 0);
+				break;
+		}
+		SaveConfig();
+	}
+
+	public void ToggleAlpha() {
+		alpha = alpha == 1.0f ? 0.5f : 1.0f;
+		SaveConfig();
+	}
+
+    public void SetPosition(float x, float y, float z) {
+        positionX = x;
+		positionY = y;
+		positionZ = z;
+		SaveConfig();
+    }
+
+    public void NudgeScale(Axis axis, float amount, Boolean multiply) {
+		if (multiply) {
+			amount *= 10;
+		}		
+		switch (axis) {
+			case X:
+				scaleX += amount;
+				break;
+			case Y:
+				scaleY += amount;
+				break;	
+		}
+    }
 }
