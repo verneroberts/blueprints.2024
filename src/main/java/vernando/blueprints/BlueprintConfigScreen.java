@@ -1,10 +1,10 @@
-package vernando.imageref;
+package vernando.blueprints;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.text.Text;
-import vernando.imageref.Util.Direction;
+import vernando.blueprints.Util.Direction;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
@@ -21,6 +21,7 @@ public class BlueprintConfigScreen extends Screen {
 
   @Override
   public void close() {
+	blueprint.SaveConfig();
     client.setScreen(parent);
   }
  

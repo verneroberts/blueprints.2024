@@ -1,4 +1,4 @@
-package vernando.imageref;
+package vernando.blueprints;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
@@ -32,7 +32,7 @@ import java.io.FileReader;
 public class Blueprint {	
 
 	private NativeImageBackedTexture texture;
-	private Identifier textureId;
+	public Identifier textureId;
 
 	private String texturePath;
 	private String id;
@@ -92,11 +92,10 @@ public class Blueprint {
 		} catch (Exception e) {
 			Main.LOGGER.error("Failed to load config: " + configFile);
 			Main.LOGGER.error(e.getMessage());
-		}
-		SaveConfig();
+		}		
 	}
 
-	private void SaveConfig() {
+	public void SaveConfig() {
 		try {
 			Main.LOGGER.info("Saving config: " + configFile);
 			JsonObject obj = new JsonObject();
@@ -220,11 +219,10 @@ public class Blueprint {
 			case Z:
 				rotationZ += 1 + (multiply ? 9 : 0);
 				break;
-		}
-		SaveConfig();
+		}		
 	}
 
-	public void NudgePosition(vernando.imageref.Util.Direction direction, Boolean multiply) {
+	public void NudgePosition(vernando.blueprints.Util.Direction direction, Boolean multiply) {
 		switch (direction) {
 			case UP:
 				positionY += 0.1 + (multiply ? 0.9 : 0);
@@ -244,20 +242,17 @@ public class Blueprint {
 			case SOUTH:
 				positionZ += 0.1 + (multiply ? 0.9 : 0);
 				break;
-		}
-		SaveConfig();
+		}		
 	}
 
 	public void ToggleAlpha() {
-		alpha = alpha == 1.0f ? 0.5f : 1.0f;
-		SaveConfig();
+		alpha = alpha == 1.0f ? 0.5f : 1.0f;		
 	}
 
     public void SetPosition(float x, float y, float z) {
         positionX = x;
 		positionY = y;
-		positionZ = z;
-		SaveConfig();
+		positionZ = z;		
     }
 
     public void NudgeScale(Axis axis, float amount, Boolean multiply) {
