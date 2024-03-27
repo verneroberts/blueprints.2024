@@ -3,14 +3,12 @@ package vernando.blueprints;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.ArrayList;
 
 import org.lwjgl.glfw.GLFW;
@@ -19,9 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonReader;
 import java.io.FileReader;
-import java.io.IOException;
 
 public class Main implements ModInitializer {	
 	public static final String MOD_ID = "blueprints";
@@ -56,7 +52,7 @@ public class Main implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, "Image Ref"));
+		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, MOD_NAME));
 
 		LoadSettings();
 		

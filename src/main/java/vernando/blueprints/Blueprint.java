@@ -214,17 +214,35 @@ public class Blueprint {
 
 	public void NudgeRotation(Axis axis, float amount, Boolean multiply) {
 		if (multiply) {
-			amount *= 10;
+			amount *= 90;
 		}
 		switch (axis) {
 			case X:
 				rotationX += amount;
+				if (rotationX > 360) {
+					rotationX -= 360;
+				}
+				if (rotationX < 0) {
+					rotationX += 360;
+				}
 				break;
 			case Y:
 				rotationY += amount;
+				if (rotationY > 360) {
+					rotationY -= 360;
+				}
+				if (rotationY < 0) {
+					rotationY += 360;
+				}
 				break;
 			case Z:
 				rotationZ += amount;
+				if (rotationZ > 360) {
+					rotationZ -= 360;
+				}
+				if (rotationZ < 0) {
+					rotationZ += 360;
+				}
 				break;
 		}		
 	}
