@@ -8,12 +8,20 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 
+
 import java.io.File;
+import java.io.FileInputStream;
 import java.util.ArrayList;
 
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 public class Main implements ModInitializer {	
 	public static final String MOD_ID = "blueprints";
@@ -49,6 +57,8 @@ public class Main implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, "Image Ref"));
+
+		LoadSettings();
 		
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null || client.world == null || client.options == null) {
@@ -100,6 +110,42 @@ public class Main implements ModInitializer {
 		// 		return;
 		// 	}
 		// });
+	}
+
+	private void LoadSettings() {
+		String configPath = Util.GetConfigPath();
+		try {
+			File file = new File(configPath + "/blueprints.json");
+			if (file.exists()) {
+				// use gson to load file
+				Gson gson = new Gson();
+				FileReader reader = new FileReader(file);
+				JsonObject obj = gson.fromJson(reader, JsonObject.class);
+				if (obj != null && obj.has("renderThroughBlocks")) renderThroughBlocks = obj.get("renderThroughBlocks").getAsBoolean();
+			} else {
+				renderThroughBlocks = false;
+				SaveSettings();
+			}
+		}
+		catch (Exception e) {
+			Main.LOGGER.error("Failed to load config");
+			Main.LOGGER.error(e.getMessage());
+			return;
+		}
+	}
+
+	public void SaveSettings() {
+		String configPath = Util.GetConfigPath();
+		JsonObject obj = new JsonObject();
+		obj.addProperty("renderThroughBlocks", renderThroughBlocks);
+		String json = obj.toString();
+		try {
+			java.nio.file.Files.write(java.nio.file.Paths.get(configPath + "/blueprints.json"), json.getBytes());
+		}  catch (Exception e) {
+			Main.LOGGER.error("Failed to save config");
+			Main.LOGGER.error(e.getMessage());
+			return;
+		}
 	}
 
 	public boolean getRenderThroughBlocks() {

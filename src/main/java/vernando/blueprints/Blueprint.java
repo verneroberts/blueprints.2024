@@ -47,6 +47,7 @@ public class Blueprint {
 	public float rotationZ;
 	public float alpha;
 	private String configFile;
+	private boolean visibility;
 
 	public Blueprint(String filename) {
 		texturePath = filename;
@@ -68,6 +69,7 @@ public class Blueprint {
 		rotationY = 0.0f;
 		rotationZ = 0.0f;
 		alpha = 1.0f;
+		visibility = true;
 
 		try {
 			File file = new File(configFile);
@@ -86,6 +88,7 @@ public class Blueprint {
 				if (obj != null && obj.has("rotationY")) rotationY = obj.get("rotationY").getAsFloat();
 				if (obj != null && obj.has("rotationZ")) rotationZ = obj.get("rotationZ").getAsFloat();
 				if (obj != null && obj.has("alpha")) alpha = obj.get("alpha").getAsFloat();
+				if (obj != null && obj.has("visibility")) visibility = obj.get("visibility").getAsBoolean();
 			} else {
 				Main.LOGGER.info("Config file not found: " + configFile);
 			}
@@ -108,6 +111,7 @@ public class Blueprint {
 			obj.addProperty("rotationY", rotationY);
 			obj.addProperty("rotationZ", rotationZ);
 			obj.addProperty("alpha", alpha);
+			obj.addProperty("visibility", visibility);
 			String json = obj.toString();
 			java.nio.file.Files.write(java.nio.file.Paths.get(configFile), json.getBytes());			
 		} catch (Exception e) {
@@ -135,7 +139,7 @@ public class Blueprint {
 	}
 
 	public void render(WorldRenderContext context, Boolean renderThroughBlocks) {		
-		if (texture == null) {
+		if (texture == null || !visibility) {
 			return;
 		}
 
@@ -208,16 +212,19 @@ public class Blueprint {
 		tessellator.draw();		
 	}
 
-	public void NudgeRotation(Axis axis, Boolean multiply) {
+	public void NudgeRotation(Axis axis, float amount, Boolean multiply) {
+		if (multiply) {
+			amount *= 10;
+		}
 		switch (axis) {
 			case X:
-				rotationX += 1 + (multiply ? 9 : 0);
+				rotationX += amount;
 				break;
 			case Y:
-				rotationY += 1 + (multiply ? 9 : 0);
+				rotationY += amount;
 				break;
 			case Z:
-				rotationZ += 1 + (multiply ? 9 : 0);
+				rotationZ += amount;
 				break;
 		}		
 	}
@@ -245,8 +252,17 @@ public class Blueprint {
 		}		
 	}
 
-	public void ToggleAlpha() {
-		alpha = alpha == 1.0f ? 0.5f : 1.0f;		
+	public void NudgeAlpha(float amount, Boolean multiply) {
+		if (multiply) {
+			amount *= 10;
+		}
+		alpha += amount;
+		if (alpha > 1) {
+			alpha = 1;
+		}
+		if (alpha < 0) {
+			alpha = 0;
+		}
 	}
 
     public void SetPosition(float x, float y, float z) {
@@ -266,6 +282,9 @@ public class Blueprint {
 			case Y:
 				scaleY += amount;
 				break;	
+			case Z:
+				// not implemented
+				break;
 		}
     }
 
@@ -274,7 +293,10 @@ public class Blueprint {
     }
 
     public void ToggleVisibility() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'ToggleVisibility'");
+        this.visibility = !this.visibility;
+    }
+
+    public boolean isVisible() {
+        return this.visibility;
     }
 }
