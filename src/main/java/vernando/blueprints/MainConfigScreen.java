@@ -28,7 +28,7 @@ public class MainConfigScreen extends Screen {
     addDrawableChild(
         ButtonWidget.builder(Text.literal("Reload"), b -> {
           main.ScanFileSystemForImages();
-          b.active = false;
+          b.setFocused(false);
         })
             .dimensions(20, 10, 60, 20)
             .build());
@@ -38,7 +38,7 @@ public class MainConfigScreen extends Screen {
         ButtonWidget.builder(Text.literal(main.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"), b -> {
           main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
           b.setMessage(main.getRenderThroughBlocks() ? Text.literal("Mode: Render all") : Text.literal("Mode: Render visible"));
-          b.active = false;
+          b.setFocused(false);
         })
             .dimensions(90, 10, 140, 20)
             .build());
