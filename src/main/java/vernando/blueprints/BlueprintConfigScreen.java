@@ -157,9 +157,7 @@ public class BlueprintConfigScreen extends Screen {
 
 			addDrawableChild(
 				ButtonWidget.builder(Text.literal("Reset"), b -> {
-					blueprint.rotationX = 0;
-					blueprint.rotationY = 0;
-					blueprint.rotationZ = 0;
+					blueprint.ResetRotation();
 				})
 			.dimensions(startX + 0 * columnWidth, startY + 7 * rowHeight, panelWidth, buttonHeight)
 			.build());

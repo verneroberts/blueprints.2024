@@ -37,15 +37,16 @@ public class Blueprint {
 	private String texturePath;
 	private String id;
 
-	public float scaleX;
-	public float scaleY;
-	public float positionX;
-	public float positionY;
-	public float positionZ;
-	public float rotationX;
-	public float rotationY;
-	public float rotationZ;
-	public float alpha;
+	private float scaleX;
+	private float scaleY;
+	private float positionX;
+	private float positionY;
+	private float positionZ;
+	private float rotationX;
+	private float rotationY;
+	private float rotationZ;
+	private float alpha;
+	public int order;
 	private String configFile;
 	private boolean visibility;
 
@@ -68,6 +69,7 @@ public class Blueprint {
 		rotationX = 0.0f;
 		rotationY = 0.0f;
 		rotationZ = 0.0f;
+		order = -1;
 		alpha = 1.0f;
 		visibility = true;
 
@@ -331,4 +333,10 @@ public class Blueprint {
     public boolean isVisible() {
         return this.visibility;
     }
+
+    public void ResetRotation() {
+		rotationX = 0.0f;
+		rotationY = 0.0f;
+		rotationZ = 0.0f;
+	}
 }
