@@ -34,10 +34,11 @@ public class MainConfigScreen extends Screen {
 
     // renderThroughBlocks
     addDrawableChild(
-        ButtonWidget.builder(Text.literal("Render through blocks"), b -> {
+        ButtonWidget.builder(Text.literal(main.getRenderThroughBlocks() ? "Mode: Always render" : "Mode: Render visible"), b -> {
           main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
+          b.setMessage(main.getRenderThroughBlocks() ? Text.literal("Mode: Always render") : Text.literal("Mode: Render visible"));
         })
-            .dimensions(90, 10, 120, 20)
+            .dimensions(90, 10, 140, 20)
             .build());
 
     // blueprint list

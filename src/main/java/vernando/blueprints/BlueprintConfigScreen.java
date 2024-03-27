@@ -26,17 +26,19 @@ public class BlueprintConfigScreen extends Screen {
 		blueprint.SaveConfig();
 		client.setScreen(parent);
 	}
+	int rowHeight = 17;
+	int columnWidth = 18;
+	int buttonWidth = 15;
+	int buttonHeight = 15;
+	int startY = 0;
+	int panelWidthPadding = 3;
+	int panelWidth = 3 * columnWidth - (columnWidth - buttonWidth);
+
 
 	@Override
 	protected void init() {
 		int width = client.getWindow().getScaledWidth();
-		int panelWidth = 60;
-		int startX = width - panelWidth;
-		int startY = 10;
-		int rowHeight = 10;
-		int columnWidth = 10;
-		int buttonWidth = 10;
-		int buttonHeight = 10;
+		int startX = width - panelWidth - 3;
 
 		boolean shiftHeld = false;
 
@@ -100,119 +102,119 @@ public class BlueprintConfigScreen extends Screen {
 			.dimensions(startX + 2 * columnWidth, (int)(startY + 1.5 * rowHeight), buttonWidth, buttonHeight)
 			.build());
 
+			addDrawableChild(
+				ButtonWidget.builder(Text.literal("Reset"), b -> {
+					 blueprint.SetPosition((float) client.player.getX(), (float) client.player.getY(), (float) client.player.getZ());
+				})
+			.dimensions(startX + 0 * columnWidth, startY + 3 * rowHeight, panelWidth, buttonHeight)
+			.build());
+
+
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("X+"), b -> {
-					blueprint.NudgeRotation(Axis.X, shiftHeld);
+					blueprint.NudgeRotation(Axis.X, 1, shiftHeld);
 				})
-			.dimensions(startX + 0 * columnWidth, startY + 4 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 0 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 		
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("X-"), b -> {
-					blueprint.NudgeRotation(Axis.X, shiftHeld);
+					blueprint.NudgeRotation(Axis.X, -1, shiftHeld);
 				})
-			.dimensions(startX + 0 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 0 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Y+"), b -> {
-					blueprint.NudgeRotation(Axis.Y, shiftHeld);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 4 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Y-"), b -> {
-					blueprint.NudgeRotation(Axis.Y, shiftHeld);
+					blueprint.NudgeRotation(Axis.Y, 1, shiftHeld);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Z+"), b -> {
-					blueprint.NudgeRotation(Axis.Z, shiftHeld);
+				ButtonWidget.builder(Text.literal("Y-"), b -> {
+					blueprint.NudgeRotation(Axis.Y, -1, shiftHeld);
 				})
-			.dimensions(startX + 2 * columnWidth, startY + 4 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 1 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Z-"), b -> {
-					blueprint.NudgeRotation(Axis.Z, shiftHeld);
+				ButtonWidget.builder(Text.literal("Z+"), b -> {
+					blueprint.NudgeRotation(Axis.Z, 1, shiftHeld);
 				})
 			.dimensions(startX + 2 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
-				ButtonWidget.builder(Text.literal("X+"), b -> {
-					blueprint.NudgeScale(Axis.X, 1, shiftHeld);
+				ButtonWidget.builder(Text.literal("Z-"), b -> {
+					blueprint.NudgeRotation(Axis.Z, -1, shiftHeld);
 				})
-			.dimensions(startX + 0 * columnWidth, startY + 7 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 2 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
+			.build());
+
+			addDrawableChild(
+				ButtonWidget.builder(Text.literal("Reset"), b -> {
+					blueprint.rotationX = 0;
+					blueprint.rotationY = 0;
+					blueprint.rotationZ = 0;
+				})
+			.dimensions(startX + 0 * columnWidth, startY + 7 * rowHeight, panelWidth, buttonHeight)
+			.build());
+
+		addDrawableChild(
+				ButtonWidget.builder(Text.literal("X+"), b -> {
+					blueprint.NudgeScale(Axis.X, 0.1f, shiftHeld);
+				})
+			.dimensions(startX + 0 * columnWidth, startY + 9 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("X-"), b -> {
-					blueprint.NudgeScale(Axis.X, -1, shiftHeld);
+					blueprint.NudgeScale(Axis.X, -0.1f, shiftHeld);
 				})
-			.dimensions(startX + 0 * columnWidth, startY + 8 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 0 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Y+"), b -> {
-					blueprint.NudgeScale(Axis.Y, 1, shiftHeld);
+					blueprint.NudgeScale(Axis.Y, 0.1f, shiftHeld);
 				})
-			.dimensions(startX + 1 * columnWidth, startY + 7 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 1 * columnWidth, startY + 9 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Y-"), b -> {
-					blueprint.NudgeScale(Axis.Y, -1, shiftHeld);
+					blueprint.NudgeScale(Axis.Y, -0.1f, shiftHeld);
 				})
-			.dimensions(startX + 1 * columnWidth, startY + 8 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 1 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 			
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("A-"), b -> {
 					blueprint.alpha -= 0.1;
 				})
-			.dimensions(startX + 0 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 0 * columnWidth, startY + 12 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("A+"), b -> {
 					blueprint.alpha += 0.1;
 				})
-			.dimensions(startX + 1 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
+			.dimensions(startX + 1 * columnWidth, startY + 12 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 			
 		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Reset Position"), b -> {
-					 blueprint.SetPosition((float) client.player.getX(), (float) client.player.getY(), (float) client.player.getZ());
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 12 * rowHeight, panelWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Toggle Visibility"), b -> {
+				ButtonWidget.builder(Text.literal(blueprint.isVisible() ? "Hide" : "Show"), b -> {
 					blueprint.ToggleVisibility();
+					if (blueprint.isVisible()) {
+						b.setMessage(Text.literal("Hide"));
+					} else {
+						b.setMessage(Text.literal("Show"));
+					}
 				})
 			.dimensions(startX + 0 * columnWidth, startY + 13 * rowHeight, panelWidth, buttonHeight)
 			.build());
 
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Reset Rotation"), b -> {
-					blueprint.rotationX = 0;
-					blueprint.rotationY = 0;
-					blueprint.rotationZ = 0;
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 14 * rowHeight, panelWidth, buttonHeight)
-			.build());
-
-			addDrawableChild(
-				ButtonWidget.builder(Text.literal("Close"), b -> {
-					close();
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 15 * rowHeight, panelWidth, buttonHeight)
-			.build());
 
 	}
 
@@ -220,6 +222,15 @@ public class BlueprintConfigScreen extends Screen {
 	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
 		super.render(context, mouseX, mouseY, delta);
 
-		context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), 20, 20, 0xffffff);
+		int width = client.getWindow().getScaledWidth();
+		int startX = width - panelWidth;
+		int textYOffset = 5;
+
+		context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), 20, textYOffset, 0xffffff);
+
+		context.drawTextWithShadow(textRenderer, Text.literal("Position"), startX, startY + textYOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), startX, startY + 4 * rowHeight + textYOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), startX, startY + 8 * rowHeight + textYOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), startX, startY + 11 * rowHeight + textYOffset, 0xffffff);
 	}
 }
