@@ -212,8 +212,10 @@ public class Blueprint {
 		tessellator.draw();		
 	}
 
-	public void NudgeRotation(Axis axis, float amount, Boolean multiply) {
-		if (multiply) {
+	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {
+		if (finetune) {
+			amount /= 10;
+		} else if (multiply) {
 			amount *= 90;
 		}
 		switch (axis) {
@@ -247,32 +249,41 @@ public class Blueprint {
 		}		
 	}
 
-	public void NudgePosition(vernando.blueprints.Util.Direction direction, Boolean multiply) {
+	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, Boolean multiply, Boolean finetune) {
+		if (finetune) {
+			amount /= 10f;
+		}
+		if (multiply) {
+			amount *= 10;
+		}
 		switch (direction) {
 			case UP:
-				positionY += 0.1 + (multiply ? 0.9 : 0);
+				positionY += amount;
 				break;
 			case DOWN:
-				positionY -= 0.1 + (multiply ? 0.9 : 0);
+				positionY -= amount;
 				break;
 			case EAST:
-				positionX += 0.1 + (multiply ? 0.9 : 0);
+				positionX += amount;
 				break;
 			case WEST:
-				positionX -= 0.1 + (multiply ? 0.9 : 0);
+				positionX -= amount;
 				break;
 			case NORTH:
-				positionZ -= 0.1 + (multiply ? 0.9 : 0);
+				positionZ -= amount;
 				break;
 			case SOUTH:
-				positionZ += 0.1 + (multiply ? 0.9 : 0);
+				positionZ += amount;
 				break;
 		}		
 	}
 
-	public void NudgeAlpha(float amount, Boolean multiply) {
+	public void NudgeAlpha(float amount, Boolean multiply, Boolean finetune) {
 		if (multiply) {
 			amount *= 10;
+		}
+		if (finetune) {
+			amount /= 10;
 		}
 		alpha += amount;
 		if (alpha > 1) {
@@ -289,10 +300,13 @@ public class Blueprint {
 		positionZ = z;		
     }
 
-    public void NudgeScale(Axis axis, float amount, Boolean multiply) {
+    public void NudgeScale(Axis axis, float amount, Boolean multiply, Boolean finetune) {
 		if (multiply) {
 			amount *= 10;
 		}		
+		if (finetune) {
+			amount /= 10;
+		}
 		switch (axis) {
 			case X:
 				scaleX += amount;

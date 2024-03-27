@@ -35,6 +35,7 @@ public class BlueprintConfigScreen extends Screen {
 	int panelWidthPadding = 3;
 	int panelWidth = 3 * columnWidth - (columnWidth - buttonWidth);
 	private boolean shiftPressed;
+	private boolean ctrlPressed;
 
 
 	@Override
@@ -46,14 +47,14 @@ public class BlueprintConfigScreen extends Screen {
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("\u25B2"), b -> {
-					blueprint.NudgePosition(Direction.UP, shiftPressed);
+					blueprint.NudgePosition(Direction.UP, 0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 1 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 		
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("\u25BC"), b -> {
-					blueprint.NudgePosition(Direction.DOWN, shiftPressed);
+					blueprint.NudgePosition(Direction.DOWN, 0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 2 * rowHeight, buttonWidth, buttonHeight)
 			.build());
@@ -63,16 +64,16 @@ public class BlueprintConfigScreen extends Screen {
 					Direction directionFacing = Util.PlayerFacingDirection();
 					switch (directionFacing) {
 						case NORTH:
-							blueprint.NudgePosition(Direction.WEST, shiftPressed);
+							blueprint.NudgePosition(Direction.WEST, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						case EAST:
-							blueprint.NudgePosition(Direction.NORTH, shiftPressed);
+							blueprint.NudgePosition(Direction.NORTH, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						case SOUTH:
-							blueprint.NudgePosition(Direction.EAST, shiftPressed);
+							blueprint.NudgePosition(Direction.EAST, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						case WEST:
-							blueprint.NudgePosition(Direction.SOUTH, shiftPressed);
+							blueprint.NudgePosition(Direction.SOUTH, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						default:
 							break;
@@ -86,16 +87,16 @@ public class BlueprintConfigScreen extends Screen {
 					Direction directionFacing = Util.PlayerFacingDirection();
 					switch (directionFacing) {
 						case NORTH:
-							blueprint.NudgePosition(Direction.EAST, shiftPressed);
+							blueprint.NudgePosition(Direction.EAST, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						case EAST:
-							blueprint.NudgePosition(Direction.SOUTH, shiftPressed);
+							blueprint.NudgePosition(Direction.SOUTH, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						case SOUTH:
-							blueprint.NudgePosition(Direction.WEST, shiftPressed);
+							blueprint.NudgePosition(Direction.WEST, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						case WEST:
-							blueprint.NudgePosition(Direction.NORTH, shiftPressed);
+							blueprint.NudgePosition(Direction.NORTH, 0.1f, shiftPressed, ctrlPressed);
 							break;
 						default:
 							break;
@@ -114,42 +115,42 @@ public class BlueprintConfigScreen extends Screen {
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("X+"), b -> {
-					blueprint.NudgeRotation(Axis.X, 1, shiftPressed);
+					blueprint.NudgeRotation(Axis.X, 1, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 0 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 		
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("X-"), b -> {
-					blueprint.NudgeRotation(Axis.X, -1, shiftPressed);
+					blueprint.NudgeRotation(Axis.X, -1, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 0 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Y+"), b -> {
-					blueprint.NudgeRotation(Axis.Y, 1, shiftPressed);
+					blueprint.NudgeRotation(Axis.Y, 1, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Y-"), b -> {
-					blueprint.NudgeRotation(Axis.Y, -1, shiftPressed);
+					blueprint.NudgeRotation(Axis.Y, -1, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Z+"), b -> {
-					blueprint.NudgeRotation(Axis.Z, 1, shiftPressed);
+					blueprint.NudgeRotation(Axis.Z, 1, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 2 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Z-"), b -> {
-					blueprint.NudgeRotation(Axis.Z, -1, shiftPressed);
+					blueprint.NudgeRotation(Axis.Z, -1, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 2 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
 			.build());
@@ -165,42 +166,42 @@ public class BlueprintConfigScreen extends Screen {
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("X+"), b -> {
-					blueprint.NudgeScale(Axis.X, 0.1f, shiftPressed);
+					blueprint.NudgeScale(Axis.X, 0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 0 * columnWidth, startY + 9 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("X-"), b -> {
-					blueprint.NudgeScale(Axis.X, -0.1f, shiftPressed);
+					blueprint.NudgeScale(Axis.X, -0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 0 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Y+"), b -> {
-					blueprint.NudgeScale(Axis.Y, 0.1f, shiftPressed);
+					blueprint.NudgeScale(Axis.Y, 0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 9 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("Y-"), b -> {
-					blueprint.NudgeScale(Axis.Y, -0.1f, shiftPressed);
+					blueprint.NudgeScale(Axis.Y, -0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 			
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("A-"), b -> {
-					blueprint.NudgeAlpha(-0.1f, shiftPressed);
+					blueprint.NudgeAlpha(-0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 0 * columnWidth, startY + 12 * rowHeight, buttonWidth, buttonHeight)
 			.build());
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("A+"), b -> {
-					blueprint.NudgeAlpha(0.1f, shiftPressed);
+					blueprint.NudgeAlpha(0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 12 * rowHeight, buttonWidth, buttonHeight)
 			.build());
@@ -225,6 +226,9 @@ public class BlueprintConfigScreen extends Screen {
 		if (keyCode == 340) {
 			shiftPressed = true;
 		}
+		if (keyCode == 341) {
+			ctrlPressed = true;
+		}
 		return super.keyPressed(keyCode, scanCode, modifiers);
 	}
 
@@ -232,6 +236,9 @@ public class BlueprintConfigScreen extends Screen {
 	public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
 		if (keyCode == 340) {
 			shiftPressed = false;
+		}
+		if (keyCode == 341) {
+			ctrlPressed = false;
 		}
 		return super.keyReleased(keyCode, scanCode, modifiers);
 	}
