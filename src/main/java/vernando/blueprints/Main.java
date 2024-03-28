@@ -22,6 +22,7 @@ import java.io.FileReader;
 public class Main implements ModInitializer {	
 	public static final String MOD_ID = "blueprints";
 	public static final String MOD_NAME = "Blueprints";
+	public static final String TOOL_ITEM = "Item Frame";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);	
 	
 	private ArrayList<Blueprint> blueprints;	
@@ -78,7 +79,8 @@ public class Main implements ModInitializer {
 				MinecraftClient.getInstance().setScreen(new MainConfigScreen(blueprints, this));
 			}
 
-			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals("Painting") || client.player.getOffHandStack().getName().getString().equals("Painting");
+
+			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals(TOOL_ITEM) || client.player.getOffHandStack().getName().getString().equals(TOOL_ITEM);
 
 			if (isHoldingPainting) {
 				if (visible == false) {
