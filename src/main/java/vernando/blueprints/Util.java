@@ -40,19 +40,21 @@ public class Util {
 		return yaw;
 	}
 
-	public static Direction PlayerFacingDirection() {
+	public static Direction PlayerFacingDirection(Boolean usePitch) {
 		MinecraftClient client = MinecraftClient.getInstance();
 		
+		if (usePitch) {
+			float pitch = client.getCameraEntity().getPitch();		
+			if (pitch >= 45) {
+				return Direction.UP;
+			}
+			if (pitch <= -45) {
+				return Direction.DOWN;
+			}
+		}
+
 		float yaw = client.getCameraEntity().getYaw();
 		yaw = fixYaw(yaw);
-		float pitch = client.getCameraEntity().getPitch();
-
-		if (pitch >= 45) {
-			return Direction.UP;
-		}
-		if (pitch <= -45) {
-			return Direction.DOWN;
-		}
 		if (yaw > -45 && yaw < 45) {
 			return Direction.SOUTH;
 		}

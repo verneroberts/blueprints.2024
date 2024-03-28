@@ -61,7 +61,7 @@ public class BlueprintConfigScreen extends Screen {
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("\u25C0"), b -> {
-					Direction directionFacing = Util.PlayerFacingDirection();
+					Direction directionFacing = Util.PlayerFacingDirection(false);
 					switch (directionFacing) {
 						case NORTH:
 							blueprint.NudgePosition(Direction.WEST, 0.1f, shiftPressed, ctrlPressed);
@@ -84,7 +84,7 @@ public class BlueprintConfigScreen extends Screen {
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("\u25B6"), b -> {
-					Direction directionFacing = Util.PlayerFacingDirection();
+					Direction directionFacing = Util.PlayerFacingDirection(false);
 					switch (directionFacing) {
 						case NORTH:
 							blueprint.NudgePosition(Direction.EAST, 0.1f, shiftPressed, ctrlPressed);
