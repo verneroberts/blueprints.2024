@@ -12,6 +12,7 @@ import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.text.StringVisitable;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
@@ -215,7 +216,9 @@ public class Blueprint {
 	}
 
 	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {
-		if (finetune) {
+		if (finetune && multiply) {
+			amount *= 180;
+		} else if (finetune) {
 			amount /= 10;
 		} else if (multiply) {
 			amount *= 90;
@@ -252,10 +255,11 @@ public class Blueprint {
 	}
 
 	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, Boolean multiply, Boolean finetune) {
-		if (finetune) {
+		if (finetune && multiply) {
+			amount *= 100f;
+		} else if (finetune) {
 			amount /= 10f;
-		}
-		if (multiply) {
+		} else if (multiply) {
 			amount *= 10;
 		}
 		switch (direction) {
@@ -281,11 +285,12 @@ public class Blueprint {
 	}
 
 	public void NudgeAlpha(float amount, Boolean multiply, Boolean finetune) {
-		if (multiply) {
+		if (finetune && multiply) {
+			amount *= 100f;
+		} else if (finetune) {
+			amount /= 10f;
+		} else if (multiply) {
 			amount *= 10;
-		}
-		if (finetune) {
-			amount /= 10;
 		}
 		alpha += amount;
 		if (alpha > 1) {
@@ -303,11 +308,12 @@ public class Blueprint {
     }
 
     public void NudgeScale(Axis axis, float amount, Boolean multiply, Boolean finetune) {
-		if (multiply) {
+		if (finetune && multiply) {
+			amount *= 100f;
+		} else if (finetune) {
+			amount /= 10f;
+		} else if (multiply) {
 			amount *= 10;
-		}		
-		if (finetune) {
-			amount /= 10;
 		}
 		switch (axis) {
 			case X:
