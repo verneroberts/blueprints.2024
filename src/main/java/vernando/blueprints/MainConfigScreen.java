@@ -3,9 +3,12 @@ package vernando.blueprints;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.text.OrderedText;
+import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -19,7 +22,7 @@ public class MainConfigScreen extends Screen {
     super(Text.literal(Main.MOD_NAME + " Config"));
     this.blueprints = blueprints;
     this.main = main;
-  }
+  }  
 
   @Override
   protected void init() {
@@ -27,8 +30,10 @@ public class MainConfigScreen extends Screen {
     // main config section
     addDrawableChild(
         ButtonWidget.builder(Text.literal("Reload"), b -> {
-          main.ScanFileSystemForImages();
-          b.setFocused(false);
+          b.setMessage(Text.literal("..."));
+          blueprints = main.ScanFileSystemForImages();
+          // refresh entire screen
+          client.setScreen(new MainConfigScreen(blueprints, main));
         })
             .dimensions(20, 10, 60, 20)
             .build());
@@ -38,7 +43,7 @@ public class MainConfigScreen extends Screen {
         ButtonWidget.builder(Text.literal(main.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"), b -> {
           main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
           b.setMessage(main.getRenderThroughBlocks() ? Text.literal("Mode: Render all") : Text.literal("Mode: Render visible"));
-          b.setFocused(false);
+          client.setScreen(new MainConfigScreen(blueprints, main));
         })
             .dimensions(90, 10, 140, 20)
             .build());
@@ -59,8 +64,9 @@ public class MainConfigScreen extends Screen {
 
     blueprints.forEach((blueprint) -> {
       int y = 40 + blueprints.indexOf(blueprint) * 24;
-      context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), 50, y + 10, 0xffffff);
-      blueprint.renderThumbnail(context, 20, y + 1, 18, 18);
+      List<OrderedText> lines = textRenderer.wrapLines(StringVisitable.plain(blueprint.getName()), width - 80 - 40);
+      context.drawTextWithShadow(textRenderer, lines.get(0), 40, y + 5, 0xffffff);
+      blueprint.renderThumbnail(context, 10, y - 3, 28, 22);          
     });
   }
 }

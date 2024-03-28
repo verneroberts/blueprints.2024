@@ -12,7 +12,6 @@ import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.text.StringVisitable;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.util.math.Vec3d;
@@ -192,10 +191,36 @@ public class Blueprint {
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1);
 	}
 
+	private void renderPaintingTexture(DrawContext drawContext, int x, int y, int width, int height) {
+		// Get the transformation matrix from the matrix stack, alongside the tessellator instance and a new buffer builder.
+		Matrix4f transformationMatrix = drawContext.getMatrices().peek().getPositionMatrix();
+		Tessellator tessellator = Tessellator.getInstance();
+		BufferBuilder buffer = tessellator.getBuffer();
+
+		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
+		buffer.vertex(transformationMatrix, x, y, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
+		buffer.vertex(transformationMatrix, x, y+height, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
+		buffer.vertex(transformationMatrix, x+width, y+height, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
+		buffer.vertex(transformationMatrix, x+width, y, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
+
+		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+		RenderSystem.setShaderTexture(0, new Identifier(Main.MOD_ID, "item_frame.png"));
+		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
+
+		tessellator.draw();		
+	}
+
     public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
 		if (texture == null) {
 			return;
-		}
+		}		
+
+		renderPaintingTexture(drawContext, x, y, width, height);
+		
+		x += 4;
+		y += 3;
+		width -= 8;
+		height -= 7;
 
 		// Get the transformation matrix from the matrix stack, alongside the tessellator instance and a new buffer builder.
 		Matrix4f transformationMatrix = drawContext.getMatrices().peek().getPositionMatrix();
