@@ -3,10 +3,20 @@ package vernando.blueprints;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.Tessellator;
+import net.minecraft.client.render.VertexFormat;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.Direction.Axis;
 import vernando.blueprints.Util.Direction;
 import net.minecraft.client.MinecraftClient;
+
+import org.joml.Matrix4f;
+
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -255,5 +265,8 @@ public class BlueprintConfigScreen extends Screen {
 		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), startX, startY + 4 * rowHeight + textYOffset, 0xffffff);
 		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), startX, startY + 8 * rowHeight + textYOffset, 0xffffff);
 		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), startX, startY + 11 * rowHeight + textYOffset, 0xffffff);
+
 	}
+
+
 }

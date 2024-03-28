@@ -2,7 +2,7 @@
 	"schemaVersion": 1,
 	"id": "blueprints",
 	"version": "${version}",
-	"name": "FHM_Vernando's Blueprints",
+	"name": "Blueprints",
 	"description": "Project blueprints into your world",
 	"authors": [
 		"FHM_Vernando"
