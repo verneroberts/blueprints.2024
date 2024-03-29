@@ -56,6 +56,7 @@ public class Blueprint {
 		id = Long.toString(System.currentTimeMillis());
 		LoadConfig();
 		registerTexture();
+		SaveConfig();
 	}
 
 	private void LoadConfig() {
