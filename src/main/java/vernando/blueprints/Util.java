@@ -5,7 +5,7 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class Util {	
+public class Util {
 	public static final Logger LOGGER = LoggerFactory.getLogger(Main.MOD_ID);
 
 	public static String GetPerWorldDimensionConfigPath() {
@@ -30,7 +30,8 @@ public class Util {
 	}
 
 	private static float fixYaw(float yaw) {
-		// no idea why, but yaw seems to just grow when the player spins in the same direction
+		// no idea why, but yaw seems to just grow when the player spins in the same
+		// direction
 		while (yaw < -180) {
 			yaw += 360;
 		}
@@ -42,9 +43,9 @@ public class Util {
 
 	public static Direction PlayerFacingDirection(Boolean usePitch) {
 		MinecraftClient client = MinecraftClient.getInstance();
-		
+
 		if (usePitch) {
-			float pitch = client.getCameraEntity().getPitch();		
+			float pitch = client.getCameraEntity().getPitch();
 			if (pitch >= 45) {
 				return Direction.UP;
 			}
@@ -72,20 +73,37 @@ public class Util {
 	}
 
 	public static String getWorldOrServerName() {
-		MinecraftClient client = MinecraftClient.getInstance();
-		if (client.isInSingleplayer())
-        {
-			return client.getServer().getSaveProperties().getLevelName();
-        }
-        else
-        {
-			return client.getCurrentServerEntry().address;
-        }
+		try {
+			MinecraftClient client = MinecraftClient.getInstance();
+			if (client.isInSingleplayer()) {
+				if (client.getServer() == null) {
+					return "singleplayer";
+				}
+				if (client.getServer().getSaveProperties() == null) {
+					return "singleplayer";
+				}
+				return client.getServer().getSaveProperties().getLevelName();
+			} else {
+				return client.getCurrentServerEntry().address;
+			}
+		} catch (Exception e) {
+			return "default";
+		}
 	}
 
 	public static String getDimensionName() {
-		MinecraftClient client = MinecraftClient.getInstance();
-		return client.world.getDimensionKey().getValue().toString().split(":")[1];
+		try {
+			MinecraftClient client = MinecraftClient.getInstance();
+			if (client.world == null) {
+				return "null";
+			}
+			if (client.world.getDimensionKey() == null) {
+				return "null";
+			}
+			return client.world.getDimensionKey().getValue().toString().split(":")[1];
+		} catch (Exception e) {
+			return "default";
+		}
 	}
 
 }
