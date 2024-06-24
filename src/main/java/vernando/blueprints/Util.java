@@ -1,6 +1,8 @@
 package vernando.blueprints;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.world.dimension.DimensionType;
+
 import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,10 +99,10 @@ public class Util {
 			if (client.world == null) {
 				return "null";
 			}
-			if (client.world.getDimension() == null) {
+			if (client.world.getDimensionEntry() == null) {
 				return "null";
 			}
-			return client.world.getDimension().toString().toString().split(":")[1];
+			return client.world.getDimensionEntry().toString().toString().split(":")[2].split("]")[0];
 		} catch (Exception e) {
 			return "default";
 		}
