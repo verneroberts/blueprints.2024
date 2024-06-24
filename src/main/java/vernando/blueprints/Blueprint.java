@@ -5,7 +5,6 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
@@ -144,7 +143,7 @@ public class Blueprint {
 	public void render(WorldRenderContext context, Boolean renderThroughBlocks) {		
 		if (texture == null || !visibility) {
 			return;
-		}
+		}		
 
 		Camera camera = context.camera();
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
@@ -161,21 +160,20 @@ public class Blueprint {
 
 		Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
 
 		if (alpha < 1f) {
 			RenderSystem.enableBlend();
 			RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		}
 
-		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
+		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
 		// add vertices in a rectangle from -scale to +scale
-		buffer.vertex(positionMatrix, -scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f).next();
-		buffer.vertex(positionMatrix, -scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f).next();
-		buffer.vertex(positionMatrix, scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f).next();
-		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f).next();
+		buffer.vertex(positionMatrix, -scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
+		buffer.vertex(positionMatrix, -scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
+		buffer.vertex(positionMatrix, scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
+		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
 
-		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+		//RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
 		RenderSystem.setShaderTexture(0, textureId);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
@@ -184,7 +182,7 @@ public class Blueprint {
 			RenderSystem.depthFunc(GL11.GL_ALWAYS);
 		}
 
-		tessellator.draw();
+		//tessellator.draw();
 
 		RenderSystem.depthFunc(GL11.GL_LEQUAL);
 		RenderSystem.enableCull();
@@ -192,53 +190,17 @@ public class Blueprint {
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1);
 	}
 
-	private void renderPaintingTexture(DrawContext drawContext, int x, int y, int width, int height) {
-		// Get the transformation matrix from the matrix stack, alongside the tessellator instance and a new buffer builder.
-		Matrix4f transformationMatrix = drawContext.getMatrices().peek().getPositionMatrix();
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
-
-		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-		buffer.vertex(transformationMatrix, x, y, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
-		buffer.vertex(transformationMatrix, x, y+height, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
-		buffer.vertex(transformationMatrix, x+width, y+height, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
-		buffer.vertex(transformationMatrix, x+width, y, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
-
-		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
-		RenderSystem.setShaderTexture(0, new Identifier(Main.MOD_ID, "item_frame.png"));
-		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
-
-		tessellator.draw();		
-	}
-
     public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
 		if (texture == null) {
 			return;
-		}		
+		}
 
-		renderPaintingTexture(drawContext, x, y, width, height);
-		
+		drawContext.drawTexture(Identifier.of(Main.MOD_ID, "item_frame.png"), x, y, 0, 0, width, height, 14, 12);		
 		x += 4;
 		y += 3;
 		width -= 8;
 		height -= 7;
-
-		// Get the transformation matrix from the matrix stack, alongside the tessellator instance and a new buffer builder.
-		Matrix4f transformationMatrix = drawContext.getMatrices().peek().getPositionMatrix();
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
-
-		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-		buffer.vertex(transformationMatrix, x, y, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
-		buffer.vertex(transformationMatrix, x, y+height, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
-		buffer.vertex(transformationMatrix, x+width, y+height, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
-		buffer.vertex(transformationMatrix, x+width, y, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
-
-		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
-		RenderSystem.setShaderTexture(0, textureId);
-		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
-
-		tessellator.draw();		
+		drawContext.drawTexture(textureId, x, y, 0, 0, width, height);		
 	}
 
 	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {

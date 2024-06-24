@@ -78,26 +78,9 @@ public class MainConfigScreen extends Screen {
       int y = 50 + blueprints.indexOf(blueprint) * 24;
       List<OrderedText> lines = textRenderer.wrapLines(StringVisitable.plain(blueprint.getName()), width - 80 - 40);
       context.drawTextWithShadow(textRenderer, lines.get(0), 40, y + 5, 0xffffff);
-      blueprint.renderThumbnail(context, 10, y - 3, 28, 22);          
+      blueprint.renderThumbnail(context, 10, y - 3, 28, 22);
     });
 
-		renderThumbnail(context, width-45, 10, 30, 30);    
+    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width-45, 10, 0, 0, 30, 30, 128, 128);
   }
-
-	private void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
-		// Get the transformation matrix from the matrix stack, alongside the tessellator instance and a new buffer builder.
-		Matrix4f transformationMatrix = drawContext.getMatrices().peek().getPositionMatrix();
-		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
-		buffer.vertex(transformationMatrix, x, y, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f);
-		buffer.vertex(transformationMatrix, x, y+height, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f);
-		buffer.vertex(transformationMatrix, x+width, y+height, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f);
-		buffer.vertex(transformationMatrix, x+width, y, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f);
-
-		// Render the tessellator and bind the icon texture
-		RenderSystem.setShaderTexture(0, Identifier.of(Main.MOD_ID, "icon.png"));
-		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-
-		//tessellator.draw();		
-	}	  
 }
