@@ -130,7 +130,7 @@ public class Blueprint {
 			Main.LOGGER.info("Loading image: " + texturePath + " as " + id);
 			NativeImage image = NativeImage.read(new FileInputStream(new File(texturePath)));
 			texture = new NativeImageBackedTexture(image);		
-			textureId = new Identifier(Main.MOD_ID, id);
+			textureId = Identifier.of(Main.MOD_ID, id);
 			Main.LOGGER.info("Registering texture: " + textureId);			
 			client.getTextureManager().registerTexture(textureId, texture);		
 			

@@ -97,10 +97,10 @@ public class Util {
 			if (client.world == null) {
 				return "null";
 			}
-			if (client.world.getDimensionKey() == null) {
+			if (client.world.getDimension() == null) {
 				return "null";
 			}
-			return client.world.getDimensionKey().getValue().toString().split(":")[1];
+			return client.world.getDimension().toString().toString().split(":")[1];
 		} catch (Exception e) {
 			return "default";
 		}
