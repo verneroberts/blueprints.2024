@@ -88,18 +88,16 @@ public class MainConfigScreen extends Screen {
 		// Get the transformation matrix from the matrix stack, alongside the tessellator instance and a new buffer builder.
 		Matrix4f transformationMatrix = drawContext.getMatrices().peek().getPositionMatrix();
 		Tessellator tessellator = Tessellator.getInstance();
-		BufferBuilder buffer = tessellator.getBuffer();
+		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
+		buffer.vertex(transformationMatrix, x, y, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f);
+		buffer.vertex(transformationMatrix, x, y+height, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f);
+		buffer.vertex(transformationMatrix, x+width, y+height, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f);
+		buffer.vertex(transformationMatrix, x+width, y, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f);
 
-		buffer.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE);
-		buffer.vertex(transformationMatrix, x, y, 0).color(1f, 1f, 1f, 1f).texture(0f, 0f).next();
-		buffer.vertex(transformationMatrix, x, y+height, 0).color(1f, 1f, 1f, 1f).texture(0f, 1f).next();
-		buffer.vertex(transformationMatrix, x+width, y+height, 0).color(1f, 1f, 1f, 1f).texture(1f, 1f).next();
-		buffer.vertex(transformationMatrix, x+width, y, 0).color(1f, 1f, 1f, 1f).texture(1f, 0f).next();
-
-		RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
-		RenderSystem.setShaderTexture(0, new Identifier(Main.MOD_ID, "icon.png"));
+		// Render the tessellator and bind the icon texture
+		RenderSystem.setShaderTexture(0, Identifier.of(Main.MOD_ID, "icon.png"));
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
 
-		tessellator.draw();		
+		//tessellator.draw();		
 	}	  
 }
