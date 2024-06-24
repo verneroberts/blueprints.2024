@@ -10,3 +10,14 @@
 
 * run the build gradle task
 * jar is in `build/libs`
+
+
+## Upgrading
+
+* refer to this: https://github.com/FabricMC/fabric-example-mod/
+* review and update:
+  * build.gradle
+  * gradle.properties
+  * gradle-wrapper.properties
+  * fabric.mod.json
+* genSources again
