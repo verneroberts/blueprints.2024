@@ -1,12 +1,21 @@
-##
+## Building on a new PC
+
+ install latest Java Development Kit (JDK) https://adoptium.net/releases.html
+
+  .\gradlew.bat build
+
 
 ## Setting up a mod development environment
 
-* install Java Development Kit (JDK) for Java 17 https://adoptium.net/releases.html
-* run the genSources gradle task
-* run the vscode gradle task
+ .\gradlew.bat genSources
+ .\gradlew.bat vscode
+ 
+ ## Running
+
+ .\gradlew.bat runClient
 
 ## Packaging
 
-* run the build gradle task
-* jar is in `build/libs`
+ .\gradlew.bat build
+
+ jar is in `build/libs`
