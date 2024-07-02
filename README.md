@@ -4,15 +4,19 @@
 
   .\gradlew.bat build
 
+  .\gradlew.bat vscode
+
 
 ## Setting up a mod development environment
 
  .\gradlew.bat genSources
- .\gradlew.bat vscode
-
+ 
 ## running
+F5 in VS code so you can hot-reload!
 
-* .\gradlew runClient
+alternatively:
+
+.\gradlew runClient
 
 ## Packaging
 
