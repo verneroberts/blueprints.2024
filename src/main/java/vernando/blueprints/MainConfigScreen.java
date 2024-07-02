@@ -3,11 +3,6 @@ package vernando.blueprints;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.GameRenderer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
@@ -15,10 +10,6 @@ import net.minecraft.util.Identifier;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import org.joml.Matrix4f;
-
-import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -81,6 +72,6 @@ public class MainConfigScreen extends Screen {
       blueprint.renderThumbnail(context, 10, y - 3, 28, 22);
     });
 
-    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width-45, 10, 0, 0, 30, 30, 128, 128);
+    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width-45, 10, 0, 0, 30, 30, 30, 30);
   }
 }

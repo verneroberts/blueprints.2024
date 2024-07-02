@@ -28,7 +28,9 @@ import com.google.gson.stream.JsonReader;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.io.FileReader;
 
-public class Blueprint {	
+import javax.imageio.stream.ImageInputStream;
+
+public class Blueprint {
 
 	private NativeImageBackedTexture texture;
 	public Identifier textureId;
@@ -63,9 +65,9 @@ public class Blueprint {
 		// start with default values:
 		scaleX = 1.0f;
 		scaleY = 1.0f;
-		positionX = (float)client.player.getX();
-		positionY = (float)client.player.getY();
-		positionZ = (float)client.player.getZ();
+		positionX = (float) client.player.getX();
+		positionY = (float) client.player.getY();
+		positionZ = (float) client.player.getZ();
 		rotationX = 0.0f;
 		rotationY = 0.0f;
 		rotationZ = 0.0f;
@@ -81,23 +83,33 @@ public class Blueprint {
 				Gson gson = new Gson();
 				JsonReader reader = new JsonReader(new FileReader(configFile));
 				JsonObject obj = gson.fromJson(reader, JsonObject.class);
-				if (obj != null && obj.has("scaleX")) scaleX = obj.get("scaleX").getAsFloat();
-				if (obj != null && obj.has("scaleY")) scaleY = obj.get("scaleY").getAsFloat();
-				if (obj != null && obj.has("positionX")) positionX = obj.get("positionX").getAsFloat();
-				if (obj != null && obj.has("positionY")) positionY = obj.get("positionY").getAsFloat();
-				if (obj != null && obj.has("positionZ")) positionZ = obj.get("positionZ").getAsFloat();
-				if (obj != null && obj.has("rotationX")) rotationX = obj.get("rotationX").getAsFloat();
-				if (obj != null && obj.has("rotationY")) rotationY = obj.get("rotationY").getAsFloat();
-				if (obj != null && obj.has("rotationZ")) rotationZ = obj.get("rotationZ").getAsFloat();
-				if (obj != null && obj.has("alpha")) alpha = obj.get("alpha").getAsFloat();
-				if (obj != null && obj.has("visibility")) visibility = obj.get("visibility").getAsBoolean();
+				if (obj != null && obj.has("scaleX"))
+					scaleX = obj.get("scaleX").getAsFloat();
+				if (obj != null && obj.has("scaleY"))
+					scaleY = obj.get("scaleY").getAsFloat();
+				if (obj != null && obj.has("positionX"))
+					positionX = obj.get("positionX").getAsFloat();
+				if (obj != null && obj.has("positionY"))
+					positionY = obj.get("positionY").getAsFloat();
+				if (obj != null && obj.has("positionZ"))
+					positionZ = obj.get("positionZ").getAsFloat();
+				if (obj != null && obj.has("rotationX"))
+					rotationX = obj.get("rotationX").getAsFloat();
+				if (obj != null && obj.has("rotationY"))
+					rotationY = obj.get("rotationY").getAsFloat();
+				if (obj != null && obj.has("rotationZ"))
+					rotationZ = obj.get("rotationZ").getAsFloat();
+				if (obj != null && obj.has("alpha"))
+					alpha = obj.get("alpha").getAsFloat();
+				if (obj != null && obj.has("visibility"))
+					visibility = obj.get("visibility").getAsBoolean();
 			} else {
 				Main.LOGGER.info("Config file not found: " + configFile);
 			}
 		} catch (Exception e) {
 			Main.LOGGER.error("Failed to load config: " + configFile);
 			Main.LOGGER.error(e.getMessage());
-		}		
+		}
 	}
 
 	public void SaveConfig() {
@@ -115,24 +127,56 @@ public class Blueprint {
 			obj.addProperty("alpha", alpha);
 			obj.addProperty("visibility", visibility);
 			String json = obj.toString();
-			java.nio.file.Files.write(java.nio.file.Paths.get(configFile), json.getBytes());			
+			java.nio.file.Files.write(java.nio.file.Paths.get(configFile), json.getBytes());
 		} catch (Exception e) {
 			Main.LOGGER.error("Failed to save config: " + configFile);
 			Main.LOGGER.error(e.getMessage());
 			return;
 		}
-	}	
+	}
+
+	private NativeImage LoadAsPng(String texturePath) {
+		try {
+			String format = javax.imageio.ImageIO.getReaderFormatNames()[0];
+			if (!format.equals("png")) {
+				Main.LOGGER.info("Converting image to png: " + texturePath);
+
+				// write to memory and reload as png
+				java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+				javax.imageio.ImageIO.write(javax.imageio.ImageIO.read(new File(texturePath)), "png", baos);
+				return NativeImage.read(new java.io.ByteArrayInputStream(baos.toByteArray()));
+			} else {
+				return NativeImage.read(new FileInputStream(texturePath));
+			}
+		} catch (Exception e) {
+			Main.LOGGER.error("Failed to load image: " + texturePath);
+			Main.LOGGER.error(e.getMessage());
+			return null;
+		}
+	}
 
 	private void registerTexture() {
 		MinecraftClient client = MinecraftClient.getInstance();
 		try {
 			Main.LOGGER.info("Loading image: " + texturePath + " as " + id);
-			NativeImage image = NativeImage.read(new FileInputStream(new File(texturePath)));
-			texture = new NativeImageBackedTexture(image);		
+
+			// create an image input stream and convert to png if needed
+			ImageInputStream iis = javax.imageio.ImageIO.createImageInputStream(new File(texturePath));
+			if (iis == null) {
+				Main.LOGGER.error("Failed to load image: " + texturePath);
+				return;
+			}
+
+			NativeImage image = LoadAsPng(texturePath);
+			if (image == null) {
+				Main.LOGGER.error("Failed to load image: " + texturePath);
+				return;
+			}
+			texture = new NativeImageBackedTexture(image);
 			textureId = Identifier.of(Main.MOD_ID, id);
-			Main.LOGGER.info("Registering texture: " + textureId);			
-			client.getTextureManager().registerTexture(textureId, texture);		
-			
+			Main.LOGGER.info("Registering texture: " + textureId);
+			client.getTextureManager().registerTexture(textureId, texture);
+
 		} catch (Exception e) {
 			Main.LOGGER.error("Failed to load image: " + texturePath);
 			Main.LOGGER.error(e.getMessage());
@@ -140,10 +184,10 @@ public class Blueprint {
 		}
 	}
 
-	public void render(WorldRenderContext context, Boolean renderThroughBlocks) {		
+	public void render(WorldRenderContext context, Boolean renderThroughBlocks) {
 		if (texture == null || !visibility) {
 			return;
-		}		
+		}
 
 		Camera camera = context.camera();
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
@@ -166,14 +210,15 @@ public class Blueprint {
 			RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		}
 
-		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
+		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS,
+				VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
 		// add vertices in a rectangle from -scale to +scale
 		buffer.vertex(positionMatrix, -scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
 		buffer.vertex(positionMatrix, -scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
 		buffer.vertex(positionMatrix, scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
 		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
 
-		//RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+		// RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
 		RenderSystem.setShaderTexture(0, textureId);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
@@ -182,7 +227,7 @@ public class Blueprint {
 			RenderSystem.depthFunc(GL11.GL_ALWAYS);
 		}
 
-		//tessellator.draw();
+		// tessellator.draw();
 
 		RenderSystem.depthFunc(GL11.GL_LEQUAL);
 		RenderSystem.enableCull();
@@ -190,17 +235,18 @@ public class Blueprint {
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1);
 	}
 
-    public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
+	public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
+		drawContext.drawTexture(Identifier.of(Main.MOD_ID, "item_frame.png"), x, y, 0, 0, width, height, width, height);
 		if (texture == null) {
+			Main.LOGGER.error('"' + texturePath + '"' + " is not a valid image file.");
 			return;
 		}
 
-		drawContext.drawTexture(Identifier.of(Main.MOD_ID, "item_frame.png"), x, y, 0, 0, width, height, 14, 12);		
 		x += 4;
 		y += 3;
 		width -= 8;
 		height -= 7;
-		drawContext.drawTexture(textureId, x, y, 0, 0, width, height);		
+		drawContext.drawTexture(textureId, x, y, 0, 0, width, height, width, height);
 	}
 
 	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {
@@ -239,10 +285,11 @@ public class Blueprint {
 					rotationZ += 360;
 				}
 				break;
-		}		
+		}
 	}
 
-	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, Boolean multiply, Boolean finetune) {
+	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, Boolean multiply,
+			Boolean finetune) {
 		if (finetune && multiply) {
 			amount *= 100f;
 		} else if (finetune) {
@@ -269,7 +316,7 @@ public class Blueprint {
 			case SOUTH:
 				positionZ += amount;
 				break;
-		}		
+		}
 	}
 
 	public void NudgeAlpha(float amount, Boolean multiply, Boolean finetune) {
@@ -289,13 +336,13 @@ public class Blueprint {
 		}
 	}
 
-    public void SetPosition(float x, float y, float z) {
-        positionX = x;
+	public void SetPosition(float x, float y, float z) {
+		positionX = x;
 		positionY = y;
-		positionZ = z;		
-    }
+		positionZ = z;
+	}
 
-    public void NudgeScale(Axis axis, float amount, Boolean multiply, Boolean finetune) {
+	public void NudgeScale(Axis axis, float amount, Boolean multiply, Boolean finetune) {
 		if (finetune && multiply) {
 			amount *= 100f;
 		} else if (finetune) {
@@ -309,26 +356,26 @@ public class Blueprint {
 				break;
 			case Y:
 				scaleY += amount;
-				break;	
+				break;
 			case Z:
 				// not implemented
 				break;
 		}
-    }
+	}
 
-    public String getName() {
-        return texturePath.split("/")[texturePath.split("/").length-1];
-    }
+	public String getName() {
+		return texturePath.split("/")[texturePath.split("/").length - 1];
+	}
 
-    public void ToggleVisibility() {
-        this.visibility = !this.visibility;
-    }
+	public void ToggleVisibility() {
+		this.visibility = !this.visibility;
+	}
 
-    public boolean isVisible() {
-        return this.visibility;
-    }
+	public boolean isVisible() {
+		return this.visibility;
+	}
 
-    public void ResetRotation() {
+	public void ResetRotation() {
 		rotationX = 0.0f;
 		rotationY = 0.0f;
 		rotationZ = 0.0f;
