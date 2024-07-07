@@ -1,9 +1,15 @@
 package vernando.blueprints;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.client.texture.NativeImage;
+import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.util.Identifier;
 
 import java.io.File;
+import java.io.FileInputStream;
+
+import javax.imageio.stream.ImageInputStream;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,6 +111,55 @@ public class Util {
 			return client.world.getDimensionEntry().toString().toString().split(":")[2].split("]")[0];
 		} catch (Exception e) {
 			return "default";
+		}
+	}
+
+
+	private static NativeImage LoadAsPng(String texturePath) {
+		try {
+			String format = javax.imageio.ImageIO.getReaderFormatNames()[0];
+			if (!format.equals("png")) {
+				Main.LOGGER.info("Converting image to png: " + texturePath);
+
+				// write to memory and reload as png
+				java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+				javax.imageio.ImageIO.write(javax.imageio.ImageIO.read(new File(texturePath)), "png", baos);
+				return NativeImage.read(new java.io.ByteArrayInputStream(baos.toByteArray()));
+			} else {
+				return NativeImage.read(new FileInputStream(texturePath));
+			}
+		} catch (Exception e) {
+			Main.LOGGER.error("Failed to load image: " + texturePath);
+			Main.LOGGER.error(e.getMessage());
+			return null;
+		}
+	}
+
+	public static NativeImageBackedTexture RegisterTexture(String texturePath, Identifier textureId) {
+		MinecraftClient client = MinecraftClient.getInstance();
+		try {
+			Main.LOGGER.info("Loading image: " + texturePath + " as " + textureId.toString());
+
+			// create an image input stream and convert to png if needed
+			ImageInputStream iis = javax.imageio.ImageIO.createImageInputStream(new File(texturePath));
+			if (iis == null) {
+				Main.LOGGER.error("Failed to load image: " + texturePath);
+				return null;
+			}
+
+			NativeImage image = LoadAsPng(texturePath);
+			if (image == null) {
+				Main.LOGGER.error("Failed to load image: " + texturePath);
+				return null;
+			}
+			NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
+			Main.LOGGER.info("Registering texture: " + textureId);
+			client.getTextureManager().registerTexture(textureId, texture);
+			return texture;
+		} catch (Exception e) {
+			Main.LOGGER.error("Failed to load image: " + texturePath);
+			Main.LOGGER.error(e.getMessage());
+			return null;
 		}
 	}
 

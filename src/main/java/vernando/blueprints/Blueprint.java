@@ -4,11 +4,12 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
+import net.minecraft.client.render.GameRenderer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
-import net.minecraft.client.texture.NativeImage;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -17,7 +18,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Direction.Axis;
 
 import java.io.File;
-import java.io.FileInputStream;
 
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -27,8 +27,6 @@ import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
 import com.mojang.blaze3d.systems.RenderSystem;
 import java.io.FileReader;
-
-import javax.imageio.stream.ImageInputStream;
 
 public class Blueprint {
 
@@ -56,7 +54,8 @@ public class Blueprint {
 		configFile = texturePath + ".json";
 		id = Long.toString(System.currentTimeMillis());
 		LoadConfig();
-		registerTexture();
+		textureId = Identifier.of(Main.MOD_ID, id);
+		texture = Util.RegisterTexture(texturePath, textureId);
 		SaveConfig();
 	}
 
@@ -135,59 +134,10 @@ public class Blueprint {
 		}
 	}
 
-	private NativeImage LoadAsPng(String texturePath) {
-		try {
-			String format = javax.imageio.ImageIO.getReaderFormatNames()[0];
-			if (!format.equals("png")) {
-				Main.LOGGER.info("Converting image to png: " + texturePath);
-
-				// write to memory and reload as png
-				java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-				javax.imageio.ImageIO.write(javax.imageio.ImageIO.read(new File(texturePath)), "png", baos);
-				return NativeImage.read(new java.io.ByteArrayInputStream(baos.toByteArray()));
-			} else {
-				return NativeImage.read(new FileInputStream(texturePath));
-			}
-		} catch (Exception e) {
-			Main.LOGGER.error("Failed to load image: " + texturePath);
-			Main.LOGGER.error(e.getMessage());
-			return null;
-		}
-	}
-
-	private void registerTexture() {
-		MinecraftClient client = MinecraftClient.getInstance();
-		try {
-			Main.LOGGER.info("Loading image: " + texturePath + " as " + id);
-
-			// create an image input stream and convert to png if needed
-			ImageInputStream iis = javax.imageio.ImageIO.createImageInputStream(new File(texturePath));
-			if (iis == null) {
-				Main.LOGGER.error("Failed to load image: " + texturePath);
-				return;
-			}
-
-			NativeImage image = LoadAsPng(texturePath);
-			if (image == null) {
-				Main.LOGGER.error("Failed to load image: " + texturePath);
-				return;
-			}
-			texture = new NativeImageBackedTexture(image);
-			textureId = Identifier.of(Main.MOD_ID, id);
-			Main.LOGGER.info("Registering texture: " + textureId);
-			client.getTextureManager().registerTexture(textureId, texture);
-
-		} catch (Exception e) {
-			Main.LOGGER.error("Failed to load image: " + texturePath);
-			Main.LOGGER.error(e.getMessage());
-			return;
-		}
-	}
-
 	public void render(WorldRenderContext context, Boolean renderThroughBlocks) {
 		if (texture == null || !visibility) {
 			return;
-		}
+		}		
 
 		Camera camera = context.camera();
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
@@ -210,15 +160,14 @@ public class Blueprint {
 			RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		}
 
-		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS,
-				VertexFormats.POSITION_COLOR_TEXTURE_LIGHT_NORMAL);
+		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
 		// add vertices in a rectangle from -scale to +scale
 		buffer.vertex(positionMatrix, -scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
 		buffer.vertex(positionMatrix, -scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
 		buffer.vertex(positionMatrix, scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
 		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
 
-		// RenderSystem.setShader(GameRenderer::getPositionColorTexProgram);
+		RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
 		RenderSystem.setShaderTexture(0, textureId);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
@@ -226,8 +175,8 @@ public class Blueprint {
 			RenderSystem.disableCull();
 			RenderSystem.depthFunc(GL11.GL_ALWAYS);
 		}
-
-		// tessellator.draw();
+		
+		BufferRenderer.drawWithGlobalProgram(buffer.end());
 
 		RenderSystem.depthFunc(GL11.GL_LEQUAL);
 		RenderSystem.enableCull();
