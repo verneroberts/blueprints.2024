@@ -147,11 +147,11 @@ public class Util {
 				return null;
 			}
 
-			NativeImage image = LoadAsPng(texturePath);
+			NativeImage image = LoadAsPng(texturePath);			
 			if (image == null) {
 				Main.LOGGER.error("Failed to load image: " + texturePath);
 				return null;
-			}
+			}			
 			NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
 			Main.LOGGER.info("Registering texture: " + textureId);
 			client.getTextureManager().registerTexture(textureId, texture);

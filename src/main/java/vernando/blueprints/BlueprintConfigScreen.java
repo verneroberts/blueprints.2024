@@ -189,6 +189,13 @@ public class BlueprintConfigScreen extends Screen {
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
 			.build());
+
+		addDrawableChild(
+				ButtonWidget.builder(Text.literal("\u27F3"), b -> {
+					blueprint.ResetScale();
+				})
+			.dimensions(startX + 2 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
+			.build());			
 			
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("A-"), b -> {
