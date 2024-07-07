@@ -45,6 +45,7 @@ public class Blueprint {
 	private float rotationY;
 	private float rotationZ;
 	private float alpha;
+	private float aspectRatio;
 	public int order;
 	private String configFile;
 	private boolean visibility;
@@ -56,6 +57,7 @@ public class Blueprint {
 		LoadConfig();
 		textureId = Identifier.of(Main.MOD_ID, id);
 		texture = Util.RegisterTexture(texturePath, textureId);
+		aspectRatio = (float) texture.getImage().getWidth() / (float) texture.getImage().getHeight();
 		SaveConfig();
 	}
 
@@ -162,10 +164,10 @@ public class Blueprint {
 
 		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
 		// add vertices in a rectangle from -scale to +scale
-		buffer.vertex(positionMatrix, -scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
-		buffer.vertex(positionMatrix, -scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
-		buffer.vertex(positionMatrix, scaleX, -scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
-		buffer.vertex(positionMatrix, scaleX, scaleY, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
+		buffer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
+		buffer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
+		buffer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
+		buffer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
 
 		RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
 		RenderSystem.setShaderTexture(0, textureId);
@@ -329,4 +331,9 @@ public class Blueprint {
 		rotationY = 0.0f;
 		rotationZ = 0.0f;
 	}
+
+    public void ResetScale() {
+        scaleX = 1.0f;
+		scaleY = 1.0f;
+    }
 }
