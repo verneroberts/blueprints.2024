@@ -49,14 +49,12 @@ public class MainConfigScreen extends Screen {
             .dimensions(80, 10, 140, 20)
             .build());
 
-    // blueprint list
-    blueprints.forEach(blueprint -> {
-      addDrawableChild(ButtonWidget.builder(Text.literal("Configure"), b -> {
-        client.setScreen(new BlueprintConfigScreen(blueprint, this));
-      })
-          .dimensions(width - 75, 50 + blueprints.indexOf(blueprint) * 24, 60, 20)
-          .build());
-    });
+      BlueprintListWidget listWidget = new BlueprintListWidget(super.client, width, height-42, 40, 20);
+      blueprints.forEach((blueprint) -> {
+          listWidget.addEntry(new BlueprintListEntry(blueprint, super.client.textRenderer));
+      });   
+      
+      addDrawableChild(listWidget);
   }
 
   @Override
@@ -64,19 +62,6 @@ public class MainConfigScreen extends Screen {
     super.render(context, mouseX, mouseY, delta);    
 
     context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
-
-    blueprints.forEach((blueprint) -> {
-      int y = 50 + blueprints.indexOf(blueprint) * 24;
-      List<OrderedText> lines = textRenderer.wrapLines(StringVisitable.plain(blueprint.getName()), width - 80 - 40);
-      context.drawTextWithShadow(textRenderer, lines.get(0), 40, y + 5, 0xffffff);
-      blueprint.renderThumbnail(context, 10, y - 3, 28, 22);
-
-      // if mouse is over this row, highlight the row
-      if (mouseX > 10 && mouseX < width - 10 && mouseY > y && mouseY < y + 24) {
-        context.fillGradient(7, y - 3, width - 10, y + 24, 0x40777777, 0x40777777);
-      }
-    });
-
     context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width-45, 10, 0, 0, 30, 30, 30, 30);    
   }
 }
