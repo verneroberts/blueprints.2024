@@ -102,12 +102,6 @@ public class Main implements ModInitializer {
 				}
 			}
 		});
-
-		// HudRenderCallback.EVENT.register((drawContext, tickDelta) -> {
-		// 	if (!visible) {
-		// 		return;
-		// 	}
-		// });
 	}
 
 	private void LoadSettings() {
