@@ -61,7 +61,7 @@ public class MainConfigScreen extends Screen {
 
   @Override
   public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-    super.render(context, mouseX, mouseY, delta);
+    super.render(context, mouseX, mouseY, delta);    
 
     context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
 
@@ -70,8 +70,13 @@ public class MainConfigScreen extends Screen {
       List<OrderedText> lines = textRenderer.wrapLines(StringVisitable.plain(blueprint.getName()), width - 80 - 40);
       context.drawTextWithShadow(textRenderer, lines.get(0), 40, y + 5, 0xffffff);
       blueprint.renderThumbnail(context, 10, y - 3, 28, 22);
+
+      // if mouse is over this row, highlight the row
+      if (mouseX > 10 && mouseX < width - 10 && mouseY > y && mouseY < y + 24) {
+        context.fillGradient(7, y - 3, width - 10, y + 24, 0x40777777, 0x40777777);
+      }
     });
 
-    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width-45, 10, 0, 0, 30, 30, 30, 30);
+    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width-45, 10, 0, 0, 30, 30, 30, 30);    
   }
 }
