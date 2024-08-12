@@ -19,7 +19,7 @@ public class MainConfigScreen extends Screen {
     super(Text.literal(Main.MOD_NAME + " Config"));
     this.blueprints = blueprints;
     this.main = main;
-  }  
+  }
 
   @Override
   protected void init() {
@@ -37,29 +37,31 @@ public class MainConfigScreen extends Screen {
 
     // renderThroughBlocks
     addDrawableChild(
-        ButtonWidget.builder(Text.literal(main.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"), b -> {
-          main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
-          b.setMessage(main.getRenderThroughBlocks() ? Text.literal("Mode: Render all") : Text.literal("Mode: Render visible"));
-          client.setScreen(new MainConfigScreen(blueprints, main));
-        })
+        ButtonWidget
+            .builder(Text.literal(main.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"), b -> {
+              main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
+              b.setMessage(main.getRenderThroughBlocks() ? Text.literal("Mode: Render all")
+                  : Text.literal("Mode: Render visible"));
+              client.setScreen(new MainConfigScreen(blueprints, main));
+            })
             .dimensions(80, 10, 140, 20)
             .build());
 
-      int width = super.width + 100;
+    int width = super.width + 100;
 
-      BlueprintListWidget listWidget = new BlueprintListWidget(super.client, width, height-52, 50, 24);
-      blueprints.forEach((blueprint) -> {
-          listWidget.addEntry(new BlueprintListEntry(blueprint, super.client.textRenderer, width * 2));
-      });   
+    BlueprintListWidget listWidget = new BlueprintListWidget(super.client, width, height - 52, 50, 24);
+    blueprints.forEach((blueprint) -> {      
+      listWidget.addEntry(new BlueprintListEntry(blueprint, super.client, this));
+    });
 
-      addDrawableChild(listWidget);
+    addDrawableChild(listWidget);
   }
 
   @Override
   public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-    super.render(context, mouseX, mouseY, delta);    
+    super.render(context, mouseX, mouseY, delta);
 
     context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
-    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width-45, 10, 0, 0, 30, 30, 30, 30);    
+    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width - 45, 10, 0, 0, 30, 30, 30, 30);
   }
 }
