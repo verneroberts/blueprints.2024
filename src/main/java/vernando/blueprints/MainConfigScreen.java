@@ -3,13 +3,9 @@ package vernando.blueprints;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
-
 import java.util.ArrayList;
-import java.util.List;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -49,11 +45,13 @@ public class MainConfigScreen extends Screen {
             .dimensions(80, 10, 140, 20)
             .build());
 
-      BlueprintListWidget listWidget = new BlueprintListWidget(super.client, width, height-42, 40, 20);
+      int width = super.width + 100;
+
+      BlueprintListWidget listWidget = new BlueprintListWidget(super.client, width, height-52, 50, 24);
       blueprints.forEach((blueprint) -> {
-          listWidget.addEntry(new BlueprintListEntry(blueprint, super.client.textRenderer));
+          listWidget.addEntry(new BlueprintListEntry(blueprint, super.client.textRenderer, width * 2));
       });   
-      
+
       addDrawableChild(listWidget);
   }
 
