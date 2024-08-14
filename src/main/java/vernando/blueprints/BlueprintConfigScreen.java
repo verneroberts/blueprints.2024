@@ -15,6 +15,7 @@ import net.fabricmc.api.Environment;
 public class BlueprintConfigScreen extends Screen {
 	private Blueprint blueprint;
 	private Screen parent;
+	private Integer blurSetting;
 
 	protected BlueprintConfigScreen(Blueprint blueprint, Screen parent) {
 		super(Text.literal(Main.MOD_NAME + " " + blueprint.getName() + " Config"));
@@ -26,6 +27,9 @@ public class BlueprintConfigScreen extends Screen {
 	public void close() {
 		blueprint.SaveConfig();
 		client.setScreen(parent);
+		// restore blur setting
+		client.options.getMenuBackgroundBlurriness().setValue(blurSetting);
+		
 	}
 	int rowHeight = 17;
 	int columnWidth = 18;
@@ -45,12 +49,16 @@ public class BlueprintConfigScreen extends Screen {
 
 		MinecraftClient client = MinecraftClient.getInstance();
 
+		// save the current blur setting then set it to 0
+		this.blurSetting = client.options.getMenuBackgroundBlurrinessValue();
+		client.options.getMenuBackgroundBlurriness().setValue(0);
+
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("\u25B2"), b -> {
 					blueprint.NudgePosition(Direction.UP, 0.1f, shiftPressed, ctrlPressed);
 				})
 			.dimensions(startX + 1 * columnWidth, startY + 1 * rowHeight, buttonWidth, buttonHeight)
-			.build());
+			.build());					
 		
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("\u25BC"), b -> {
@@ -260,8 +268,7 @@ public class BlueprintConfigScreen extends Screen {
 		context.drawTextWithShadow(textRenderer, Text.literal("Position"), startX, startY + textYOffset, 0xffffff);
 		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), startX, startY + 4 * rowHeight + textYOffset, 0xffffff);
 		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), startX, startY + 8 * rowHeight + textYOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), startX, startY + 11 * rowHeight + textYOffset, 0xffffff);
-
+		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), startX, startY + 11 * rowHeight + textYOffset, 0xffffff);			
 	}
 
 
