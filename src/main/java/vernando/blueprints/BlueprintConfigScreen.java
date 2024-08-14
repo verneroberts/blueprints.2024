@@ -114,6 +114,38 @@ public class BlueprintConfigScreen extends Screen {
 			.build());
 
 			addDrawableChild(
+				ButtonWidget.builder(Text.literal("+"), b -> {
+					Direction directionFacing = Util.PlayerFacingDirection(false);
+					blueprint.NudgePosition(directionFacing, 0.1f, shiftPressed, ctrlPressed);
+				})
+			.dimensions((int)(startX), (int)(startY + 1 * rowHeight), buttonWidth, buttonHeight / 2)
+			.build());
+
+			addDrawableChild(
+				ButtonWidget.builder(Text.literal("-"), b -> {
+					Direction directionFacing = Util.PlayerFacingDirection(false);
+					switch (directionFacing) {
+						case NORTH:
+							blueprint.NudgePosition(Direction.SOUTH, 0.1f, shiftPressed, ctrlPressed);
+							break;
+						case EAST:
+							blueprint.NudgePosition(Direction.WEST, 0.1f, shiftPressed, ctrlPressed);
+							break;
+						case SOUTH:
+							blueprint.NudgePosition(Direction.NORTH, 0.1f, shiftPressed, ctrlPressed);
+							break;
+						case WEST:
+							blueprint.NudgePosition(Direction.EAST, 0.1f, shiftPressed, ctrlPressed);
+							break;
+						default:
+							break;
+					}
+				})
+			.dimensions((int)(startX + 2 * columnWidth), (int)(startY + 1 * rowHeight), buttonWidth, buttonHeight / 2)
+			.build());
+			
+
+			addDrawableChild(
 				ButtonWidget.builder(Text.literal("Reset"), b -> {
 					 blueprint.SetPosition((float) client.player.getX(), (float) client.player.getY(), (float) client.player.getZ());
 				})
