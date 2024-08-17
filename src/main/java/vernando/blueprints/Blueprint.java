@@ -1,6 +1,7 @@
 package vernando.blueprints;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
+import net.fabricmc.loader.impl.lib.tinyremapper.extension.mixin.common.Logger;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.BufferBuilder;
@@ -173,17 +174,18 @@ public class Blueprint {
 		RenderSystem.setShaderTexture(0, textureId);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
-		if (renderThroughBlocks) {
+		if (renderThroughBlocks) {			
 			RenderSystem.disableCull();
 			RenderSystem.depthFunc(GL11.GL_ALWAYS);
 		}
 		
+		RenderSystem.enableDepthTest();
 		BufferRenderer.drawWithGlobalProgram(buffer.end());
 
-		RenderSystem.depthFunc(GL11.GL_LEQUAL);
 		RenderSystem.enableCull();
 		matrixStack.pop();
 		RenderSystem.setShaderColor(1f, 1f, 1f, 1);
+		
 	}
 
 	public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
