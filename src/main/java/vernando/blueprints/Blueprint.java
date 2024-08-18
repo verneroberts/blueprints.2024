@@ -174,12 +174,17 @@ public class Blueprint {
 		RenderSystem.setShaderTexture(0, textureId);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
-		if (renderThroughBlocks) {			
-			RenderSystem.disableCull();
+		if (renderThroughBlocks) {
+			// render through blocks
 			RenderSystem.depthFunc(GL11.GL_ALWAYS);
 		}
 		
+		// always show the back of the images
+		RenderSystem.disableCull();
+
+		// let it hide behind blocks
 		RenderSystem.enableDepthTest();
+		
 		BufferRenderer.drawWithGlobalProgram(buffer.end());
 
 		RenderSystem.enableCull();

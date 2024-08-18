@@ -30,6 +30,10 @@ public class MainConfigScreen extends Screen {
 
   @Override
   protected void init() {
+    imagesPerRow = main.getImagesPerRow();
+    if (imagesPerRow < 5 || imagesPerRow > 20) {
+      imagesPerRow = 5;
+    }
 
     // main config section
     addDrawableChild(
@@ -55,11 +59,11 @@ public class MainConfigScreen extends Screen {
             .build());
 
     // addDrawableChild(
-    //     ButtonWidget.builder(Text.literal("Open Folder"), b -> {
-    //       Util.OpenFolder(Util.GetPerWorldDimensionConfigPath());
-    //     })
-    //         .dimensions(width - 200, 10, 80, 20)
-    //         .build());
+    // ButtonWidget.builder(Text.literal("Open Folder"), b -> {
+    // Util.OpenFolder(Util.GetPerWorldDimensionConfigPath());
+    // })
+    // .dimensions(width - 200, 10, 80, 20)
+    // .build());
 
     addDrawableChild(
         ButtonWidget.builder(Text.literal("Close"), b -> {
@@ -72,7 +76,6 @@ public class MainConfigScreen extends Screen {
     imageHeight = imageWidth;
     rowsPerPage = (height - 50) / imageHeight;
 
-
     // add page buttons in the bottom right with the page number in the middle
     addDrawableChild(
         ButtonWidget.builder(Text.literal("<"), b -> {
@@ -80,7 +83,7 @@ public class MainConfigScreen extends Screen {
         })
             .dimensions(width - 135, height - 25, 20, 20)
             .build());
-    
+
     addDrawableChild(
         ButtonWidget.builder(Text.literal(">"), b -> {
           pageOffset = Math.min((blueprints.size() - 1) / imagesPerRow / rowsPerPage, pageOffset + 1);
@@ -95,8 +98,13 @@ public class MainConfigScreen extends Screen {
           imageWidth = (width - 20) / imagesPerRow;
           imageHeight = imageWidth;
           rowsPerPage = (height - 50) / imageHeight;
-          pageOffset = 0;          
+          pageOffset = 0;
           b.setMessage(Text.literal("Images per page: " + imagesPerRow));
+
+          // save config
+          main.setImagesPerRow(imagesPerRow);
+          main.SaveSettings();
+
         })
             .dimensions(width - 250, height - 25, 110, 20)
             .build());
@@ -106,35 +114,46 @@ public class MainConfigScreen extends Screen {
   public void render(DrawContext context, int mouseX, int mouseY, float delta) {
     super.render(context, mouseX, mouseY, delta);
 
-    // grid of blueprints
-    blueprints.forEach((blueprint) -> {             
-      int index = blueprints.indexOf(blueprint);
-      if (index < pageOffset * imagesPerRow || index >= (pageOffset + rowsPerPage) * imagesPerRow) {
-        return;
+    try {
+
+      // grid of blueprints
+      blueprints.forEach((blueprint) -> {
+        int index = blueprints.indexOf(blueprint);
+        if (index < pageOffset * imagesPerRow || index >= (pageOffset + rowsPerPage) * imagesPerRow) {
+          return;
+        }
+        index -= pageOffset * imagesPerRow;
+        int x = 10 + (index % imagesPerRow) * imageWidth;
+        int y = 50 + (index / imagesPerRow) * imageHeight;
+
+        // if the mouse is over, draw a background rectangle
+        if (mouseX >= x && mouseX <= x + imageWidth && mouseY >= y && mouseY <= y + imageHeight) {
+          context.fill(x, y, x + imageWidth, y + imageHeight, 0x80ffffff);
+          x += 2;
+          y += 2;
+        }
+
+        blueprint.renderThumbnail(context, x, y, imageWidth - 4, imageHeight - 4, true);
+
+        if (!blueprint.isVisible()) {
+          context.fill(x, y, x + imageWidth - 4, y + imageHeight - 4, 0x80000000);
+        }
+      });
+
+      context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
+      context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width - 45, 10, 0, 0, 30, 30, 30, 30);
+
+      // render page number between buttons at the bottom
+      if (rowsPerPage > 0 && imagesPerRow > 0) {
+        context.drawTextWithShadow(textRenderer,
+            "Page " + (pageOffset + 1) + " of " + ((blueprints.size() - 1) / imagesPerRow / rowsPerPage + 1),
+            width - 110,
+            height - 20, 0xffffff);
       }
-      index -= pageOffset * imagesPerRow;
-      int x = 10 + (index % imagesPerRow) * imageWidth;
-      int y = 50 + (index / imagesPerRow) * imageHeight;
-
-      // if the mouse is over, draw a background rectangle
-      if (mouseX >= x && mouseX <= x + imageWidth && mouseY >= y && mouseY <= y + imageHeight) {
-        context.fill(x, y, x + imageWidth, y + imageHeight, 0x80ffffff);
-        x += 2;
-        y += 2;
-      }          
-
-      blueprint.renderThumbnail(context, x, y, imageWidth-4, imageHeight-4, true);
-
-      if (!blueprint.isVisible()) {
-        context.fill(x, y, x + imageWidth - 4, y + imageHeight - 4, 0x80000000);
-      }
-    });
-
-    context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
-    context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width - 45, 10, 0, 0, 30, 30, 30, 30);
-
-    // render page number between buttons at the bottom
-    context.drawTextWithShadow(textRenderer, "Page " + (pageOffset + 1) + " of " + ((blueprints.size() - 1) / imagesPerRow / rowsPerPage + 1), width - 110, height - 20, 0xffffff);
+    } catch (Exception e) {
+      e.printStackTrace();
+      Main.LOGGER.error(e.getMessage());
+    }
   }
 
   @Override
@@ -163,25 +182,25 @@ public class MainConfigScreen extends Screen {
     return super.mouseClicked(mouseX, mouseY, button);
   }
 
-	@Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 340) {
-			shiftPressed = true;
-		}
-		if (keyCode == 341) {
-			ctrlPressed = true;
-		}
-		return super.keyPressed(keyCode, scanCode, modifiers);
-	}
+  @Override
+  public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    if (keyCode == 340) {
+      shiftPressed = true;
+    }
+    if (keyCode == 341) {
+      ctrlPressed = true;
+    }
+    return super.keyPressed(keyCode, scanCode, modifiers);
+  }
 
-	@Override
-	public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 340) {
-			shiftPressed = false;
-		}
-		if (keyCode == 341) {
-			ctrlPressed = false;
-		}
-		return super.keyReleased(keyCode, scanCode, modifiers);
-	}  
+  @Override
+  public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
+    if (keyCode == 340) {
+      shiftPressed = false;
+    }
+    if (keyCode == 341) {
+      ctrlPressed = false;
+    }
+    return super.keyReleased(keyCode, scanCode, modifiers);
+  }
 }
