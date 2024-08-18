@@ -99,7 +99,7 @@ public class Main implements ModInitializer {
 		WorldRenderEvents.END.register(context -> {
 			if (visible) {
 				for (Blueprint blueprint : blueprints) {
-					blueprint.render(context, renderThroughBlocks);
+					blueprint.render(context, renderThroughBlocks, true);
 				}
 			}
 		});

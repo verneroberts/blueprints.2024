@@ -119,12 +119,11 @@ public class MainConfigScreen extends Screen {
       // grid of blueprints
       blueprints.forEach((blueprint) -> {
         int index = blueprints.indexOf(blueprint);
-        if (index < pageOffset * imagesPerRow || index >= (pageOffset + rowsPerPage) * imagesPerRow) {
-          return;
-        }
-        index -= pageOffset * imagesPerRow;
-        int x = 10 + (index % imagesPerRow) * imageWidth;
-        int y = 50 + (index / imagesPerRow) * imageHeight;
+
+        if (!isImageInView(index)) return;
+        int[] pos = getImagePostion(index);
+        int x = pos[0];
+        int y = pos[1];
 
         // if the mouse is over, draw a background rectangle
         if (mouseX >= x && mouseX <= x + imageWidth && mouseY >= y && mouseY <= y + imageHeight) {
@@ -156,17 +155,30 @@ public class MainConfigScreen extends Screen {
     }
   }
 
+  private boolean isImageInView(int index) {
+    index -= pageOffset * imagesPerRow * rowsPerPage;
+    if (index < 0 || index >= imagesPerRow * rowsPerPage) return false;
+
+    return true;
+  }
+
+  private int[] getImagePostion(int index) {
+    index -= pageOffset * imagesPerRow * rowsPerPage;
+    int x = 10 + (index % imagesPerRow) * imageWidth;
+    int y = 50 + (index / imagesPerRow) * imageHeight;
+    return new int[] { x, y };
+  }
+
   @Override
   public boolean mouseClicked(double mouseX, double mouseY, int button) {
     if (button == 0) {
       blueprints.forEach((blueprint) -> {
         int index = blueprints.indexOf(blueprint);
-        if (index < pageOffset * imagesPerRow || index >= (pageOffset + rowsPerPage) * imagesPerRow) {
-          return;
-        }
-        index -= pageOffset * imagesPerRow;
-        int x = 10 + (index % imagesPerRow) * imageWidth;
-        int y = 50 + (index / imagesPerRow) * imageHeight;
+        if (!isImageInView(index)) return;
+        int[] pos = getImagePostion(index);
+        int x = pos[0];
+        int y = pos[1];
+        
         if (mouseX >= x && mouseX <= x + imageWidth && mouseY >= y && mouseY <= y + imageHeight) {
 
           // if ctrl is clicked, the toggle visibility

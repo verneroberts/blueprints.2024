@@ -137,7 +137,7 @@ public class Blueprint {
 		}
 	}
 
-	public void render(WorldRenderContext context, Boolean renderThroughBlocks) {
+	public void render(WorldRenderContext context, Boolean renderThroughBlocks, Boolean renderBothSides) {
 		if (texture == null || !visibility) {
 			return;
 		}		
@@ -175,14 +175,14 @@ public class Blueprint {
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
 		if (renderThroughBlocks) {
-			// render through blocks
 			RenderSystem.depthFunc(GL11.GL_ALWAYS);
 		}
 		
-		// always show the back of the images
-		RenderSystem.disableCull();
+		if (renderBothSides) {
+			RenderSystem.disableCull();
+		}
 
-		// let it hide behind blocks
+		// ensure the blueprint is rendered behind other blocks
 		RenderSystem.enableDepthTest();
 		
 		BufferRenderer.drawWithGlobalProgram(buffer.end());
