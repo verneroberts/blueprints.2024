@@ -32,6 +32,7 @@ public class Main implements ModInitializer {
 	private String currentWorld = "";
 	private String currentDimension = "";
 	private boolean renderThroughBlocks;
+	private int imagesPerRow;
 
 	public ArrayList<Blueprint> ScanFileSystemForImages() {
 		String fullPath = Util.GetPerWorldDimensionConfigPath();
@@ -114,6 +115,7 @@ public class Main implements ModInitializer {
 				FileReader reader = new FileReader(file);
 				JsonObject obj = gson.fromJson(reader, JsonObject.class);
 				if (obj != null && obj.has("renderThroughBlocks")) renderThroughBlocks = obj.get("renderThroughBlocks").getAsBoolean();
+				if (obj != null && obj.has("imagesPerRow")) imagesPerRow = obj.get("imagesPerRow").getAsInt();
 			} else {
 				renderThroughBlocks = false;
 				SaveSettings();
@@ -130,6 +132,7 @@ public class Main implements ModInitializer {
 		String configPath = Util.GetConfigPath();
 		JsonObject obj = new JsonObject();
 		obj.addProperty("renderThroughBlocks", renderThroughBlocks);
+		obj.addProperty("imagesPerRow", imagesPerRow);
 		String json = obj.toString();
 		try {
 			java.nio.file.Files.write(java.nio.file.Paths.get(configPath + "/blueprints.json"), json.getBytes());
@@ -146,5 +149,13 @@ public class Main implements ModInitializer {
 
     public void setRenderThroughBlocks(boolean b) {
 		renderThroughBlocks = b;
+    }
+
+    public void setImagesPerRow(int x) {
+        imagesPerRow = x;
+    }
+
+    public int getImagesPerRow() {
+        return imagesPerRow;
     }
 }
