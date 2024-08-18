@@ -188,17 +188,21 @@ public class Blueprint {
 		
 	}
 
-	public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height) {
-		drawContext.drawTexture(Identifier.of(Main.MOD_ID, "item_frame.png"), x, y, 0, 0, width, height, width, height);
+	public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height, boolean includeFrame) {
 		if (texture == null) {
 			Main.LOGGER.error('"' + texturePath + '"' + " is not a valid image file.");
 			return;
 		}
+		if (includeFrame) {
+			drawContext.drawTexture(Identifier.of(Main.MOD_ID, "item_frame.png"), x, y, 0, 0, width, height, width, height);
+		}
 
-		x += 4;
-		y += 3;
-		width -= 8;
-		height -= 7;
+		x += ((2/14f) * width) + 1;
+		y += ((2/12f) * height) + 1;
+
+		width *= (10/14f);
+		height *= (8/12f);
+		
 		drawContext.drawTexture(textureId, x, y, 0, 0, width, height, width, height);
 	}
 
@@ -338,4 +342,8 @@ public class Blueprint {
         scaleX = 1.0f;
 		scaleY = 1.0f;
     }
+
+	public void setVisible(boolean b) {
+		this.visibility = b;
+	}
 }

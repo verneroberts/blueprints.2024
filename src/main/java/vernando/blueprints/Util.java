@@ -163,4 +163,14 @@ public class Util {
 		}
 	}
 
+    public static void OpenFolder(String getPerWorldDimensionConfigPath) {
+		try {					
+			getPerWorldDimensionConfigPath = "c:\\code\\";
+			java.awt.Desktop.getDesktop().open(new File(getPerWorldDimensionConfigPath));
+		} catch (Exception e) {
+			Main.LOGGER.error("Failed to open folder: " + getPerWorldDimensionConfigPath);
+			Main.LOGGER.error(e.getMessage());
+		}
+    }
+
 }

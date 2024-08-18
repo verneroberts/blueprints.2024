@@ -32,7 +32,7 @@ public class BlueprintListEntry extends ElementListWidget.Entry<BlueprintListEnt
         List<OrderedText> lines = textRenderer.wrapLines(StringVisitable.plain(blueprint.getName()),
                 entryWidth-40);
         context.drawTextWithShadow(textRenderer, lines.get(0), x + 40, y + 5, 0xffffff);
-        blueprint.renderThumbnail(context, x+ 10, y - 3, 28, 22);
+        blueprint.renderThumbnail(context, x+ 10, y - 3, 28, 22, true);
 
         if (hovered) {
             context.fillGradient(x, y - 3, x + entryWidth, y + entryHeight, -2130706433, -2130706433);
