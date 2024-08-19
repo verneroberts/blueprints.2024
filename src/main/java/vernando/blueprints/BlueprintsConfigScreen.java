@@ -11,7 +11,7 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 
 @Environment(EnvType.CLIENT)
-public class MainConfigScreen extends Screen {
+public class BlueprintsConfigScreen extends Screen {
   private ArrayList<Blueprint> blueprints;
   private Main main;
   private int imagesPerRow = 5;
@@ -22,7 +22,7 @@ public class MainConfigScreen extends Screen {
   private boolean shiftPressed;
   private boolean ctrlPressed;
 
-  protected MainConfigScreen(ArrayList<Blueprint> blueprints, Main main) {
+  protected BlueprintsConfigScreen(Main main, ArrayList<Blueprint> blueprints) {
     super(Text.literal(Main.MOD_NAME + " Config"));
     this.blueprints = blueprints;
     this.main = main;
@@ -30,7 +30,7 @@ public class MainConfigScreen extends Screen {
 
   @Override
   protected void init() {
-    imagesPerRow = main.getImagesPerRow();
+    imagesPerRow = Settings.getImagesPerRow();
     if (imagesPerRow < 5 || imagesPerRow > 20) {
       imagesPerRow = 5;
     }
@@ -39,9 +39,9 @@ public class MainConfigScreen extends Screen {
     addDrawableChild(
         ButtonWidget.builder(Text.literal("Reload"), b -> {
           b.setMessage(Text.literal("..."));
-          blueprints = main.ScanFileSystemForImages();
+          blueprints = BlueprintsManager.getInstance().ScanFileSystemForImages();
           // refresh entire screen
-          client.setScreen(new MainConfigScreen(blueprints, main));
+          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .dimensions(10, 10, 60, 20)
             .build());
@@ -49,12 +49,13 @@ public class MainConfigScreen extends Screen {
     // renderThroughBlocks
     addDrawableChild(
         ButtonWidget
-            .builder(Text.literal(main.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"), b -> {
-              main.setRenderThroughBlocks(!main.getRenderThroughBlocks());
-              b.setMessage(main.getRenderThroughBlocks() ? Text.literal("Mode: Render all")
-                  : Text.literal("Mode: Render visible"));
-              client.setScreen(new MainConfigScreen(blueprints, main));
-            })
+            .builder(Text.literal(Settings.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"),
+                b -> {
+                  Settings.setRenderThroughBlocks(!Settings.getRenderThroughBlocks());
+                  b.setMessage(Settings.getRenderThroughBlocks() ? Text.literal("Mode: Render all")
+                      : Text.literal("Mode: Render visible"));
+                  client.setScreen(new BlueprintsConfigScreen(main, blueprints));
+                })
             .dimensions(80, 10, 140, 20)
             .build());
 
@@ -102,9 +103,7 @@ public class MainConfigScreen extends Screen {
           b.setMessage(Text.literal("Images per page: " + imagesPerRow));
 
           // save config
-          main.setImagesPerRow(imagesPerRow);
-          main.SaveSettings();
-
+          Settings.setImagesPerRow(imagesPerRow);
         })
             .dimensions(width - 250, height - 25, 110, 20)
             .build());
@@ -120,7 +119,8 @@ public class MainConfigScreen extends Screen {
       blueprints.forEach((blueprint) -> {
         int index = blueprints.indexOf(blueprint);
 
-        if (!isImageInView(index)) return;
+        if (!isImageInView(index))
+          return;
         int[] pos = getImagePostion(index);
         int x = pos[0];
         int y = pos[1];
@@ -157,7 +157,8 @@ public class MainConfigScreen extends Screen {
 
   private boolean isImageInView(int index) {
     index -= pageOffset * imagesPerRow * rowsPerPage;
-    if (index < 0 || index >= imagesPerRow * rowsPerPage) return false;
+    if (index < 0 || index >= imagesPerRow * rowsPerPage)
+      return false;
 
     return true;
   }
@@ -174,12 +175,15 @@ public class MainConfigScreen extends Screen {
     if (button == 0) {
       blueprints.forEach((blueprint) -> {
         int index = blueprints.indexOf(blueprint);
-        if (!isImageInView(index)) return;
+        if (!isImageInView(index))
+          return;
         int[] pos = getImagePostion(index);
         int x = pos[0];
         int y = pos[1];
-        
+
         if (mouseX >= x && mouseX <= x + imageWidth && mouseY >= y && mouseY <= y + imageHeight) {
+
+          BlueprintsHud.getInstance().setSelectedBlueprint(blueprint);
 
           // if ctrl is clicked, the toggle visibility
           if (ctrlPressed) {

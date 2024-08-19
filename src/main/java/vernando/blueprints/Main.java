@@ -7,17 +7,10 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 
-
-import java.io.File;
-import java.util.ArrayList;
-
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import java.io.FileReader;
 
 public class Main implements ModInitializer {	
 	public static final String MOD_ID = "blueprints";
@@ -25,43 +18,28 @@ public class Main implements ModInitializer {
 	public static final String TOOL_ITEM = "Item Frame";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);	
 	
-	private ArrayList<Blueprint> blueprints;	
 	private static boolean visible = false;
 	private static KeyBinding keyLaunchConfig;
-
+	private static KeyBinding keyPush;
+	private static KeyBinding keyPull;
+	
 	private String currentWorld = "";
-	private String currentDimension = "";
-	private boolean renderThroughBlocks;
-	private int imagesPerRow;
-
-	public ArrayList<Blueprint> ScanFileSystemForImages() {
-		String fullPath = Util.GetPerWorldDimensionConfigPath();
-		LOGGER.info("Scanning for images in " + fullPath);
-		blueprints = new ArrayList<Blueprint>();
-		File folder = new File(fullPath);
-		File[] listOfFiles = folder.listFiles();
-		for (File file : listOfFiles) {
-			if (file.isFile()) {
-				String filename = file.getName();
-				if (filename.endsWith(".jpg") || filename.endsWith(".png")) {					
-					Blueprint blueprint = new Blueprint(fullPath + "/" + filename);
-					blueprints.add(blueprint);
-				}
-			}
-		}
-		return blueprints;
-	}
+	private String currentDimension = "";	
 
 	@Override
 	public void onInitialize() {
 		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, MOD_NAME));
+		keyPull = KeyBindingHelper.registerKeyBinding(new KeyBinding("Pull", GLFW.GLFW_KEY_EQUAL, MOD_NAME));
+		keyPush = KeyBindingHelper.registerKeyBinding(new KeyBinding("Push", GLFW.GLFW_KEY_MINUS, MOD_NAME));
 
-		LoadSettings();
+		Settings.LoadSettings();
 		
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null || client.world == null || client.options == null) {
 				return;
 			}
+
+			BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
 			
 			String world = Util.getWorldOrServerName();
 			String dimension = Util.getDimensionName();
@@ -69,93 +47,51 @@ public class Main implements ModInitializer {
 				LOGGER.info("World changed to " + world + " dimension " + dimension);
 				currentWorld = world;
 				currentDimension = dimension;
-				ScanFileSystemForImages();
+				blueprintManager.ScanFileSystemForImages();
 			}
 
-			if (blueprints == null) {
+			if (blueprintManager.blueprints == null) {
 				return;
 			}
 
 			if (keyLaunchConfig.wasPressed()) {
-				MinecraftClient.getInstance().setScreen(new MainConfigScreen(blueprints, this));
+				MinecraftClient.getInstance().setScreen(new BlueprintsConfigScreen(this, blueprintManager.blueprints));
 			}
 
+			if (keyPush.wasPressed()) {
+				BlueprintsHud.getInstance().push(KeyBindingHelper);
+			}
+
+			if (keyPull.wasPressed()) {
+				BlueprintsHud.getInstance().pull();
+			}
 
 			boolean isHoldingPainting = client.player.getMainHandStack().getName().getString().equals(TOOL_ITEM) || client.player.getOffHandStack().getName().getString().equals(TOOL_ITEM);
 
 			if (isHoldingPainting) {
 				if (visible == false) {
+					BlueprintsHud.getInstance().enable();
 					visible = true;
 				}
 			} else {
 				if (visible == true) {
 					visible = false;
+					BlueprintsHud.getInstance().disable();
 				}				
 				return;
 			}
 
-		});			
+		});
 
 		WorldRenderEvents.END.register(context -> {
 			if (visible) {
-				for (Blueprint blueprint : blueprints) {
-					blueprint.render(context, renderThroughBlocks, true);
+				BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
+				for (Blueprint blueprint : blueprintManager.blueprints) {
+					blueprint.render(context, Settings.getRenderThroughBlocks(), true);
 				}
+				
+				BlueprintsHud.getInstance().render(context);
 			}
 		});
-	}
-
-	private void LoadSettings() {
-		String configPath = Util.GetConfigPath();
-		try {
-			File file = new File(configPath + "/blueprints.json");
-			if (file.exists()) {
-				// use gson to load file
-				Gson gson = new Gson();
-				FileReader reader = new FileReader(file);
-				JsonObject obj = gson.fromJson(reader, JsonObject.class);
-				if (obj != null && obj.has("renderThroughBlocks")) renderThroughBlocks = obj.get("renderThroughBlocks").getAsBoolean();
-				if (obj != null && obj.has("imagesPerRow")) imagesPerRow = obj.get("imagesPerRow").getAsInt();
-			} else {
-				renderThroughBlocks = false;
-				SaveSettings();
-			}
-		}
-		catch (Exception e) {
-			Main.LOGGER.error("Failed to load config");
-			Main.LOGGER.error(e.getMessage());
-			return;
-		}
-	}
-
-	public void SaveSettings() {
-		String configPath = Util.GetConfigPath();
-		JsonObject obj = new JsonObject();
-		obj.addProperty("renderThroughBlocks", renderThroughBlocks);
-		obj.addProperty("imagesPerRow", imagesPerRow);
-		String json = obj.toString();
-		try {
-			java.nio.file.Files.write(java.nio.file.Paths.get(configPath + "/blueprints.json"), json.getBytes());
-		}  catch (Exception e) {
-			Main.LOGGER.error("Failed to save config");
-			Main.LOGGER.error(e.getMessage());
-			return;
-		}
-	}
-
-	public boolean getRenderThroughBlocks() {
-		return renderThroughBlocks;
-	}
-
-    public void setRenderThroughBlocks(boolean b) {
-		renderThroughBlocks = b;
-    }
-
-    public void setImagesPerRow(int x) {
-        imagesPerRow = x;
-    }
-
-    public int getImagesPerRow() {
-        return imagesPerRow;
-    }
+	}	
 }

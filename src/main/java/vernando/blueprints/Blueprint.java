@@ -1,7 +1,6 @@
 package vernando.blueprints;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.fabricmc.loader.impl.lib.tinyremapper.extension.mixin.common.Logger;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.BufferBuilder;
@@ -350,5 +349,9 @@ public class Blueprint {
 
 	public void setVisible(boolean b) {
 		this.visibility = b;
+	}
+
+	public String getFilename() {
+		return texturePath;
 	}
 }
