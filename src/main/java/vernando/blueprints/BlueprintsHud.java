@@ -19,20 +19,12 @@ public class BlueprintsHud {
     }
     
     public void render(WorldRenderContext context) {     
-        if (!isEnabled) {
-            return;
-        }
-
-        if (selectedBlueprint != null) {
-            Main.LOGGER.info("WorldInterface render " + selectedBlueprint.getName());
-            // print the name in the bottom left
-            MinecraftClient client = MinecraftClient.getInstance();
-            client.inGameHud.setOverlayMessage(Text.literal(selectedBlueprint.getName()), false);
-        }
     }
 
     public void setSelectedBlueprint(Blueprint blueprint) {
+        MinecraftClient client = MinecraftClient.getInstance();
         selectedBlueprint = blueprint;
+        client.inGameHud.setOverlayMessage(Text.literal(selectedBlueprint.getName()), false);            
     }
 
     public void push() {
@@ -50,6 +42,10 @@ public class BlueprintsHud {
         
         if (selectedBlueprint != null) {
             Direction facingDirection = Util.PlayerFacingDirection(true);
+            if (facingDirection == Direction.UP)
+                facingDirection = Direction.DOWN;
+            else if (facingDirection == Direction.DOWN)
+                facingDirection = Direction.UP;
 
             selectedBlueprint.NudgePosition(facingDirection, i, false, false);
         }

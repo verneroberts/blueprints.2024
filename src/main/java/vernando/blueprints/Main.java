@@ -4,7 +4,6 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 
 import org.lwjgl.glfw.GLFW;
@@ -29,8 +28,8 @@ public class Main implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, MOD_NAME));
-		keyPull = KeyBindingHelper.registerKeyBinding(new KeyBinding("Pull", GLFW.GLFW_KEY_EQUAL, MOD_NAME));
-		keyPush = KeyBindingHelper.registerKeyBinding(new KeyBinding("Push", GLFW.GLFW_KEY_MINUS, MOD_NAME));
+		keyPull = KeyBindingHelper.registerKeyBinding(new KeyBinding("Pull", GLFW.GLFW_KEY_MINUS, MOD_NAME));
+		keyPush = KeyBindingHelper.registerKeyBinding(new KeyBinding("Push", GLFW.GLFW_KEY_EQUAL, MOD_NAME));
 
 		Settings.LoadSettings();
 		
@@ -55,11 +54,11 @@ public class Main implements ModInitializer {
 			}
 
 			if (keyLaunchConfig.wasPressed()) {
-				MinecraftClient.getInstance().setScreen(new BlueprintsConfigScreen(this, blueprintManager.blueprints));
+				client.setScreen(new BlueprintsConfigScreen(this, blueprintManager.blueprints));
 			}
 
 			if (keyPush.wasPressed()) {
-				BlueprintsHud.getInstance().push(KeyBindingHelper);
+				BlueprintsHud.getInstance().push();
 			}
 
 			if (keyPull.wasPressed()) {
@@ -70,7 +69,7 @@ public class Main implements ModInitializer {
 
 			if (isHoldingPainting) {
 				if (visible == false) {
-					BlueprintsHud.getInstance().enable();
+					BlueprintsHud.getInstance().enable();					
 					visible = true;
 				}
 			} else {
