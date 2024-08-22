@@ -23,7 +23,7 @@ public class BlueprintsManager {
 		for (File file : listOfFiles) {
 			if (file.isFile()) {
 				String filename = file.getName();
-				if (filename.endsWith(".jpg") || filename.endsWith(".png")) {					
+				if (filename.endsWith(".jpg") || filename.endsWith(".png") || filename.endsWith(".tif")) {					
 					Blueprint blueprint = new Blueprint(fullPath + "/" + filename);
 					blueprints.add(blueprint);
 				}

@@ -19,6 +19,7 @@ public class BlueprintsConfigScreen extends Screen {
   private int imageHeight = 100;
   private int pageOffset = 0;
   private int rowsPerPage = 3;
+  @SuppressWarnings("unused")
   private boolean shiftPressed;
   private boolean ctrlPressed;
 
@@ -59,12 +60,12 @@ public class BlueprintsConfigScreen extends Screen {
             .dimensions(80, 10, 140, 20)
             .build());
 
-    // addDrawableChild(
-    // ButtonWidget.builder(Text.literal("Open Folder"), b -> {
-    // Util.OpenFolder(Util.GetPerWorldDimensionConfigPath());
-    // })
-    // .dimensions(width - 200, 10, 80, 20)
-    // .build());
+    addDrawableChild(
+    ButtonWidget.builder(Text.literal("Open Folder"), b -> {
+    Util.OpenFolder(Util.GetPerWorldDimensionConfigPath());
+    })
+    .dimensions(width - 200, 10, 80, 20)
+    .build());
 
     addDrawableChild(
         ButtonWidget.builder(Text.literal("Close"), b -> {
