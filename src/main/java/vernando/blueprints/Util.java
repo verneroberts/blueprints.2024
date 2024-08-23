@@ -7,6 +7,7 @@ import net.minecraft.util.Identifier;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.nio.file.Path;
 
 import javax.imageio.stream.ImageInputStream;
 
@@ -163,12 +164,31 @@ public class Util {
 		}
 	}
 
-    public static void OpenFolder(String getPerWorldDimensionConfigPath) {
-		try {					
-			getPerWorldDimensionConfigPath = "c:\\code\\";
-			java.awt.Desktop.getDesktop().open(new File(getPerWorldDimensionConfigPath));
+    public static void OpenFolder(String folder) {
+		// create process to launch explorer.exe with this path
+		MinecraftClient client = MinecraftClient.getInstance();
+		String basePath = client.runDirectory.getAbsolutePath();		
+		Path path = Path.of(basePath, folder);
+		String folderPath = path.toString();
+		Main.LOGGER.info("opening folder: " + folderPath);
+		String os = System.getProperty("os.name").toLowerCase();
+		try {								
+			
+			if (os.contains("win")) {
+				ProcessBuilder pb = new ProcessBuilder("explorer.exe", folderPath);
+				pb.start();
+			} else if (os.contains("nix") || os.contains("nux")) {
+				ProcessBuilder pb = new ProcessBuilder("xdg-open", folderPath);
+				pb.start();
+			} else if (os.contains("mac")) {
+				ProcessBuilder pb = new ProcessBuilder("open", folderPath);
+				pb.start();
+			} else {
+				Main.LOGGER.error("Unknown OS: " + os);
+			}
+
 		} catch (Exception e) {
-			Main.LOGGER.error("Failed to open folder: " + getPerWorldDimensionConfigPath);
+			Main.LOGGER.error("Failed to open folder: " + folderPath + " on " + os);
 			Main.LOGGER.error(e.getMessage());
 		}
     }
