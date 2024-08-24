@@ -2,6 +2,7 @@ package vernando.blueprints;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.text.Text;
 import vernando.blueprints.Util.Direction;
 
@@ -28,14 +29,14 @@ public class BlueprintsHud {
     }
 
     public void push() {
-        pushPull(-1);
+        pushPull(0.1f);
     }
 
     public void pull() {
-        pushPull(1);
+        pushPull(-0.1f);
     }
 
-    private void pushPull(int i) {
+    private void pushPull(float i) {
         if (!isEnabled) {
             return;
         }
@@ -47,12 +48,18 @@ public class BlueprintsHud {
             else if (facingDirection == Direction.DOWN)
                 facingDirection = Direction.UP;
 
-            selectedBlueprint.NudgePosition(facingDirection, i, false, false);
+            selectedBlueprint.NudgePosition(facingDirection, i, Screen.hasShiftDown(), Screen.hasControlDown());
         }
     }
 
     public void enable() {
-        isEnabled = true;
+        if (!isEnabled) {
+            isEnabled = true;
+            if (selectedBlueprint != null) {
+                MinecraftClient client = MinecraftClient.getInstance();
+                client.inGameHud.setOverlayMessage(Text.literal(selectedBlueprint.getName()), false);            
+            }
+        }
     }
 
     public void disable() {
