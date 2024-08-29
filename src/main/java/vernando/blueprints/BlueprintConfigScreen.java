@@ -2,11 +2,11 @@ package vernando.blueprints;
 
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.tooltip.Tooltip;
+import net.minecraft.client.gui.widget.TextFieldWidget;
 import net.minecraft.text.Text;
-import net.minecraft.util.math.Direction.Axis;
-import vernando.blueprints.Util.Direction;
-import net.minecraft.client.MinecraftClient;
+
+import java.util.ArrayList;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -16,11 +16,13 @@ public class BlueprintConfigScreen extends Screen {
 	private Blueprint blueprint;
 	private Screen parent;
 	private Integer blurSetting;
+	private ArrayList<NumberFieldWidget> inputBoxes;
 
 	protected BlueprintConfigScreen(Blueprint blueprint, Screen parent) {
 		super(Text.literal(Main.MOD_NAME + " " + blueprint.getName() + " Config"));
 		this.blueprint = blueprint;
 		this.parent = parent;
+		this.inputBoxes = new ArrayList<NumberFieldWidget>();
 	}
 
 	@Override
@@ -31,276 +33,111 @@ public class BlueprintConfigScreen extends Screen {
 		client.options.getMenuBackgroundBlurriness().setValue(blurSetting);
 		
 	}
-	int rowHeight = 17;
-	int columnWidth = 18;
-	int buttonWidth = 15;
-	int buttonHeight = 15;
-	int startY = 0;
-	int panelWidthPadding = 3;
-	int panelWidth = 3 * columnWidth - (columnWidth - buttonWidth);
-	private boolean shiftPressed;
-	private boolean ctrlPressed;
-
 
 	@Override
 	protected void init() {
 		int width = client.getWindow().getScaledWidth();
-		int startX = width - panelWidth - 3;
-
-		MinecraftClient client = MinecraftClient.getInstance();
 
 		// save the current blur setting then set it to 0
 		this.blurSetting = client.options.getMenuBackgroundBlurrinessValue();
 		client.options.getMenuBackgroundBlurriness().setValue(0);
 
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("\u25B2"), b -> {
-					blueprint.NudgePosition(Direction.UP, 0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 1 * rowHeight, buttonWidth, buttonHeight)
-			.build());					
+		// add a grid of input boxes on the right side of the screen
+		// these boxes are used to set the position, rotation, scale, and alpha of the blueprint
+		int rowHeight = 17;
+		int columnWidth = 18;
+		int columnPadding = 5;
+		int rowPadding = 5;
+		int startX = width - (columnWidth + columnPadding) * 3;
+		int startY = 20;
 		
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("\u25BC"), b -> {
-					blueprint.NudgePosition(Direction.DOWN, 0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 2 * rowHeight, buttonWidth, buttonHeight)
-			.build());
+		// position
+		NumberFieldWidget posX = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getPosX(), (v) -> blueprint.setPosX(v), "X Position");
+		addDrawable(posX);
+		inputBoxes.add(posX);
+		startX += columnWidth + columnPadding;
 
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("\u25C0"), b -> {
-					Direction directionFacing = Util.PlayerFacingDirection(false);
-					switch (directionFacing) {
-						case NORTH:
-							blueprint.NudgePosition(Direction.WEST, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case EAST:
-							blueprint.NudgePosition(Direction.NORTH, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case SOUTH:
-							blueprint.NudgePosition(Direction.EAST, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case WEST:
-							blueprint.NudgePosition(Direction.SOUTH, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						default:
-							break;
-					}
-				})
-			.dimensions(startX + 0 * columnWidth, (int)(startY + 1.5 * rowHeight), buttonWidth, buttonHeight)
-			.build());
+		NumberFieldWidget posY = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getPosY(), (v) -> blueprint.setPosY(v), "Y Position");
+		addDrawable(posY);
+		inputBoxes.add(posY);
+		startX += columnWidth + columnPadding;
 
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("\u25B6"), b -> {
-					Direction directionFacing = Util.PlayerFacingDirection(false);
-					switch (directionFacing) {
-						case NORTH:
-							blueprint.NudgePosition(Direction.EAST, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case EAST:
-							blueprint.NudgePosition(Direction.SOUTH, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case SOUTH:
-							blueprint.NudgePosition(Direction.WEST, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case WEST:
-							blueprint.NudgePosition(Direction.NORTH, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						default:
-							break;
-					}
-				})
-			.dimensions(startX + 2 * columnWidth, (int)(startY + 1.5 * rowHeight), buttonWidth, buttonHeight)
-			.build());
+		NumberFieldWidget posZ = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getPosZ(), (v) -> blueprint.setPosZ(v), "Z Position");
+		addDrawable(posZ);
+		inputBoxes.add(posZ);
+		startY += rowHeight + rowPadding;
+		startX = width - (columnWidth + columnPadding) * 3;
 
-			addDrawableChild(
-				ButtonWidget.builder(Text.literal("+"), b -> {
-					Direction directionFacing = Util.PlayerFacingDirection(false);
-					blueprint.NudgePosition(directionFacing, 0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions((int)(startX), (int)(startY + 1 * rowHeight), buttonWidth, buttonHeight / 2)
-			.build());
+		// rotation
+		NumberFieldWidget rotX = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getRotationX(), (v) -> blueprint.setRotationX(v), "X Rotation");
+		addDrawable(rotX);
+		inputBoxes.add(rotX);
+		startX += columnWidth + columnPadding;
 
-			addDrawableChild(
-				ButtonWidget.builder(Text.literal("-"), b -> {
-					Direction directionFacing = Util.PlayerFacingDirection(false);
-					switch (directionFacing) {
-						case NORTH:
-							blueprint.NudgePosition(Direction.SOUTH, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case EAST:
-							blueprint.NudgePosition(Direction.WEST, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case SOUTH:
-							blueprint.NudgePosition(Direction.NORTH, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						case WEST:
-							blueprint.NudgePosition(Direction.EAST, 0.1f, shiftPressed, ctrlPressed);
-							break;
-						default:
-							break;
-					}
-				})
-			.dimensions((int)(startX + 2 * columnWidth), (int)(startY + 1 * rowHeight), buttonWidth, buttonHeight / 2)
-			.build());
-			
+		NumberFieldWidget rotY = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getRotationY(), (v) -> blueprint.setRotationY(v), "Y Rotation");
+		addDrawable(rotY);
+		inputBoxes.add(rotY);
+		startX += columnWidth + columnPadding;
 
-			addDrawableChild(
-				ButtonWidget.builder(Text.literal("Reset"), b -> {
-					 blueprint.SetPosition((float) client.player.getX(), (float) client.player.getY(), (float) client.player.getZ());
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 3 * rowHeight, panelWidth, buttonHeight)
-			.build());
+		NumberFieldWidget rotZ = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getRotationZ(), (v) -> blueprint.setRotationZ(v), "Z Rotation");
+		addDrawable(rotZ);
+		inputBoxes.add(rotZ);
+		startY += rowHeight + rowPadding;
+		startX = width - (columnWidth + columnPadding) * 3;
+
+		// scale
+		NumberFieldWidget scaleX = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getScaleX(), (v) -> blueprint.setScaleX(v), "X Scale");
+		addDrawable(scaleX);
+		inputBoxes.add(scaleX);
+		startX += columnWidth + columnPadding;
+
+		NumberFieldWidget scaleY = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getScaleY(), (v) -> blueprint.setScaleY(v), "Y Scale");
+		addDrawable(scaleY);
+		inputBoxes.add(scaleY);
+		startX += columnWidth + columnPadding;
+
+		// alpha
+		NumberFieldWidget alpha = new NumberFieldWidget(textRenderer, startX, startY, columnWidth, rowHeight, blueprint.getAlpha(), (v) -> blueprint.setAlpha(v), "Alpha");
+		addDrawable(alpha);
+		inputBoxes.add(alpha);
+		startY += rowHeight + rowPadding;
+		startX = width - (columnWidth + columnPadding) * 3;
 
 
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("X+"), b -> {
-					blueprint.NudgeRotation(Axis.X, 1, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-		
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("X-"), b -> {
-					blueprint.NudgeRotation(Axis.X, -1, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Y+"), b -> {
-					blueprint.NudgeRotation(Axis.Y, 1, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Y-"), b -> {
-					blueprint.NudgeRotation(Axis.Y, -1, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Z+"), b -> {
-					blueprint.NudgeRotation(Axis.Z, 1, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 2 * columnWidth, startY + 5 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Z-"), b -> {
-					blueprint.NudgeRotation(Axis.Z, -1, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 2 * columnWidth, startY + 6 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-			addDrawableChild(
-				ButtonWidget.builder(Text.literal("Reset"), b -> {
-					blueprint.ResetRotation();
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 7 * rowHeight, panelWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("X+"), b -> {
-					blueprint.NudgeScale(Axis.X, 0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 9 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("X-"), b -> {
-					blueprint.NudgeScale(Axis.X, -0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Y+"), b -> {
-					blueprint.NudgeScale(Axis.Y, 0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 9 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("Y-"), b -> {
-					blueprint.NudgeScale(Axis.Y, -0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("\u27F3"), b -> {
-					blueprint.ResetScale();
-				})
-			.dimensions(startX + 2 * columnWidth, startY + 10 * rowHeight, buttonWidth, buttonHeight)
-			.build());			
-			
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("A-"), b -> {
-					blueprint.NudgeAlpha(-0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 12 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal("A+"), b -> {
-					blueprint.NudgeAlpha(0.1f, shiftPressed, ctrlPressed);
-				})
-			.dimensions(startX + 1 * columnWidth, startY + 12 * rowHeight, buttonWidth, buttonHeight)
-			.build());
-			
-		addDrawableChild(
-				ButtonWidget.builder(Text.literal(blueprint.isVisible() ? "Hide" : "Show"), b -> {
-					blueprint.ToggleVisibility();
-					if (blueprint.isVisible()) {
-						b.setMessage(Text.literal("Hide"));
-					} else {
-						b.setMessage(Text.literal("Show"));
-					}
-				})
-			.dimensions(startX + 0 * columnWidth, startY + 13 * rowHeight, panelWidth, buttonHeight)
-			.build());
-
-
-	}
-
-	@Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 340) {
-			shiftPressed = true;
-		}
-		if (keyCode == 341) {
-			ctrlPressed = true;
-		}
-		return super.keyPressed(keyCode, scanCode, modifiers);
-	}
-
-	@Override
-	public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-		if (keyCode == 340) {
-			shiftPressed = false;
-		}
-		if (keyCode == 341) {
-			ctrlPressed = false;
-		}
-		return super.keyReleased(keyCode, scanCode, modifiers);
-	}
+	}	
 
 	@Override
 	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
 		super.render(context, mouseX, mouseY, delta);
+	
+		context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), 20, 5, 0xffffff);
+	}
 
-		int width = client.getWindow().getScaledWidth();
-		int startX = width - panelWidth;
-		int textYOffset = 5;
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {			
+		
+		float scrollAmount = (float)verticalAmount * 0.1f;
+		if (Screen.hasControlDown() && Screen.hasShiftDown()) {
+			scrollAmount *= 50f;
+		} else {
+			if (Screen.hasShiftDown()) {
+				scrollAmount *= 0.01f;
+			}
+			if (Screen.hasControlDown()) {
+				scrollAmount *= 10f;
+			}
+		}
 
-		context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), 20, textYOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Position"), startX, startY + textYOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), startX, startY + 4 * rowHeight + textYOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), startX, startY + 8 * rowHeight + textYOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), startX, startY + 11 * rowHeight + textYOffset, 0xffffff);			
+		// work out which input box is being scrolled over and adjust the value accordingly	
+		for (NumberFieldWidget input : inputBoxes) {
+			if (input.isHovered()) {
+				float newValue = input.getValue() + scrollAmount;
+				input.setValue(newValue);
+				return true;
+			}
+		}	
+		
+		return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
 	}
 
 

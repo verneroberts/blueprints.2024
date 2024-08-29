@@ -354,4 +354,88 @@ public class Blueprint {
 	public String getFilename() {
 		return texturePath;
 	}
+
+    public Float getPosX() {
+        return positionX;
+    }
+
+	public Float getPosY() {
+		return positionY;
+	}
+
+	public Float getPosZ() {
+		return positionZ;
+	}
+
+	public Float getRotationX() {
+		return rotationX;
+	}
+
+	public Float getRotationY() {
+		return rotationY;
+	}
+
+	public Float getRotationZ() {
+		return rotationZ;
+	}
+
+	public Float getScaleX() {
+		return scaleX;
+	}
+
+	public Float getScaleY() {
+		return scaleY;
+	}
+
+	public Float getAlpha() {
+		return alpha;
+	}
+
+	public String getVisibility() {
+		return Boolean.toString(visibility);
+	}
+
+	public void setVisibility(boolean b) {
+		this.visibility = b;
+	}
+
+	public void setPosX(float f) {
+		positionX = f;
+	}
+
+	public void setPosY(float f) {
+		positionY = f;
+	}
+
+	public void setPosZ(float f) {
+		positionZ = f;
+	}
+
+	public void setRotationX(float f) {
+		rotationX = f;
+	}
+
+	public void setRotationY(float f) {
+		rotationY = f;
+	}
+
+	public void setRotationZ(float f) {
+		rotationZ = f;
+	}
+
+	public void setScaleX(float f) {
+		scaleX = f;
+	}
+
+	public void setScaleY(float f) {
+		scaleY = f;
+	}
+
+	public void setAlpha(float f) {
+		alpha = f;
+	}
+
+	public void setVisibility(String string) {
+		visibility = Boolean.parseBoolean(string);
+	}	
 }
