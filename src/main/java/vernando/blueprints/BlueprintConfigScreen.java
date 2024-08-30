@@ -17,7 +17,7 @@ public class BlueprintConfigScreen extends Screen {
 	private Integer blurSetting;
 	private ArrayList<NumberFieldWidget> inputBoxes;
 	int rowHeight = 17;
-	int rowPadding = 4;
+	int rowPadding = 2;
 	int columnWidth = 60;
 	int columnPadding = 4;
 
@@ -105,8 +105,7 @@ public class BlueprintConfigScreen extends Screen {
 							(float) client.player.getZ());
 							posX.setValue(blueprint.getPosX());
 							posY.setValue(blueprint.getPosY());
-							posZ.setValue(blueprint.getPosZ());							
-		
+							posZ.setValue(blueprint.getPosZ());		
 				})
 						.dimensions(c1x, row(5), columnWidth, rowHeight)
 						.build());
@@ -145,16 +144,17 @@ public class BlueprintConfigScreen extends Screen {
 	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
 		super.render(context, mouseX, mouseY, delta);
 
-		context.drawTextWithShadow(textRenderer, Text.literal("Position"), c1x, row(1) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), c2x, row(1) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), c1x, row(6) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), c2x, row(6) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("X"), c0x, row(2) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Y"), c0x, row(3) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Z"), c0x, row(4) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("X"), c0x, row(7) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Y"), c0x, row(8) + rowHeight/2, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), c1x, row(0) + rowHeight/2, 0xffffff);
+		int textOffset = rowHeight / 2 - 4;
+		context.drawTextWithShadow(textRenderer, Text.literal("Position"), c1x, 10 + row(1) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), c2x, 10 + row(1) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), c1x, 10 + row(6) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), c2x, 10 + row(6) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("X"), c0x, row(2) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Y"), c0x, row(3) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Z"), c0x, row(4) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("W"), c0x, row(7) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("H"), c0x, row(8) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), c1x, row(0) + textOffset, 0xffffff);
 	}
 
 	@Override
