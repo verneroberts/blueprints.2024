@@ -344,7 +344,7 @@ public class Blueprint {
 
     public void ResetScale() {
         scaleX = 1.0f;
-		scaleY = 1.0f;
+		scaleY = scaleX / aspectRatio;
     }
 
 	public void setVisible(boolean b) {
