@@ -71,9 +71,9 @@ public class BlueprintConfigScreen extends Screen {
 		NumberFieldWidget rotZ = new NumberFieldWidget(textRenderer, c2x, row(4), columnWidth, rowHeight,
 				blueprint.getRotationZ(), (v) -> blueprint.setRotationZ(v), "Z Rotation", 1);
 		NumberFieldWidget scaleX = new NumberFieldWidget(textRenderer, c1x, row(7), columnWidth, rowHeight,
-				blueprint.getScaleX(), (v) -> blueprint.setScaleX(v), "X Scale", 1);
+				blueprint.getScaleX(), (v) -> blueprint.setScaleX(v), "Width", 1);
 		NumberFieldWidget scaleY = new NumberFieldWidget(textRenderer, c1x, row(8), columnWidth, rowHeight,
-				blueprint.getScaleY(), (v) -> blueprint.setScaleY(v), "Y Scale", 1);
+				blueprint.getScaleY(), (v) -> blueprint.setScaleY(v), "Height", 1);
 		NumberFieldWidget alpha = new NumberFieldWidget(textRenderer, c2x, row(7), columnWidth, rowHeight,
 				blueprint.getAlpha(), (v) -> blueprint.setAlpha(v), "Alpha", 0.1f)
 				.setMaxValue(1f)
@@ -101,8 +101,11 @@ public class BlueprintConfigScreen extends Screen {
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("To Player"), b -> {
-					blueprint.SetPosition((float) client.player.getX(), (float) client.player.getY(),
-							(float) client.player.getZ());
+					// round position to nearest 10th
+					float x = (float) Math.round(client.player.getX() * 10) / 10;
+					float y = (float) Math.round(client.player.getY() * 10) / 10;
+					float z = (float) Math.round(client.player.getZ() * 10) / 10;
+					blueprint.SetPosition(x,y,z);
 							posX.setValue(blueprint.getPosX());
 							posY.setValue(blueprint.getPosY());
 							posZ.setValue(blueprint.getPosZ());		
@@ -145,10 +148,10 @@ public class BlueprintConfigScreen extends Screen {
 		super.render(context, mouseX, mouseY, delta);
 
 		int textOffset = rowHeight / 2 - 4;
-		context.drawTextWithShadow(textRenderer, Text.literal("Position"), c1x, 10 + row(1) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), c2x, 10 + row(1) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), c1x, 10 + row(6) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), c2x, 10 + row(6) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Position"), c1x + 4, 5 + row(1) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), c2x + 4, 5 + row(1) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), c1x + 4, 5 + row(6) + textOffset, 0xffffff);
+		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), c2x + 4, 5 + row(6) + textOffset, 0xffffff);
 		context.drawTextWithShadow(textRenderer, Text.literal("X"), c0x, row(2) + textOffset, 0xffffff);
 		context.drawTextWithShadow(textRenderer, Text.literal("Y"), c0x, row(3) + textOffset, 0xffffff);
 		context.drawTextWithShadow(textRenderer, Text.literal("Z"), c0x, row(4) + textOffset, 0xffffff);

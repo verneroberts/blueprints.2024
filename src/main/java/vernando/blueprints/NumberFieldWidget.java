@@ -13,6 +13,7 @@ public class NumberFieldWidget extends TextFieldWidget {
     private Consumer<Float> changedListener;
     private Float maxValue;
     private Float minValue;
+    private int precision=1;
     
     public NumberFieldWidget(TextRenderer textRenderer, int x, int y, int width, int height, float value, Consumer<Float> changedListener, String tooltip, float standardDelta) {
         super(textRenderer, x, y, width, height, Text.literal(String.valueOf(value)));
@@ -49,8 +50,19 @@ public class NumberFieldWidget extends TextFieldWidget {
         this.minValue = minValue;
         return this;
     }
+
+    public NumberFieldWidget setStandardDelta(float standardDelta) {
+        this.standardDelta = standardDelta;
+        return this;
+    }
+
+    public NumberFieldWidget setPrecision(int precision) {
+        this.precision = precision;
+        return this;
+    }
     
     public NumberFieldWidget setValue(float value) {
+        value = Math.round(value * Math.pow(10, precision)) / (float)Math.pow(10, precision);
 
         if (maxValue != null && value > maxValue) {
             value = maxValue;
