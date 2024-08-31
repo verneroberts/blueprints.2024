@@ -22,7 +22,7 @@ public class BlueprintConfigScreen extends Screen {
 	int columnPadding = 4;
 
 	int c0x = 5;
-	int c1x = 20;
+	int c1x = 18;
 	int c2x = c1x + columnWidth + columnPadding;
 
 	private int row(int rowNumber) {
@@ -173,6 +173,20 @@ public class BlueprintConfigScreen extends Screen {
 				}				
 				return true;
 			}
+		}
+
+		// special case for scale - if the mouse is over the label, adjust both values
+		if (mouseX > c0x && mouseX < c0x + columnWidth && mouseY > row(6) && mouseY < row(6) + rowHeight) {
+			for (NumberFieldWidget input : inputBoxes) {
+				if (input == inputBoxes.get(6) || input == inputBoxes.get(7)) {
+					if (verticalAmount > 0) {
+						input.increment(Screen.hasShiftDown(), Screen.hasControlDown());
+					} else {
+						input.decrement(Screen.hasShiftDown(), Screen.hasControlDown());
+					}
+				}
+			}
+			return true;
 		}
 
 		return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
