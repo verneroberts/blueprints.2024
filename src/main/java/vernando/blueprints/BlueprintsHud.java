@@ -23,8 +23,8 @@ public class BlueprintsHud {
     }
 
     public void setSelectedBlueprint(Blueprint blueprint) {
-        MinecraftClient client = MinecraftClient.getInstance();
         selectedBlueprint = blueprint;
+        // MinecraftClient client = MinecraftClient.getInstance();
         // client.inGameHud.setOverlayMessage(Text.literal(selectedBlueprint.getName()), false);            
     }
 

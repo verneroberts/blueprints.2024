@@ -95,13 +95,13 @@ public class BlueprintsConfigScreen extends Screen {
 
     // add 'images per page' button that cycles between 5, 10, 15, 20
     addDrawableChild(
-        ButtonWidget.builder(Text.literal("Images per page: " + imagesPerRow), b -> {
+        ButtonWidget.builder(Text.literal("Images per row: " + imagesPerRow), b -> {
           imagesPerRow = imagesPerRow % 20 + 5;
           imageWidth = (width - 20) / imagesPerRow;
           imageHeight = imageWidth;
           rowsPerPage = (height - 50) / imageHeight;
           pageOffset = 0;
-          b.setMessage(Text.literal("Images per page: " + imagesPerRow));
+          b.setMessage(Text.literal("Images per row: " + imagesPerRow));
 
           // save config
           Settings.setImagesPerRow(imagesPerRow);
