@@ -33,6 +33,9 @@ alternatively:
   * gradle-wrapper.properties
   * fabric.mod.json
 * genSources again
+ .\gradlew.bat clean
  .\gradlew.bat build
+* clean vscode workspace
+  "Java: Clean the Java language server workspace" from the Command Palette (Ctrl+Shift+P).
 
  jar is in `build/libs`
