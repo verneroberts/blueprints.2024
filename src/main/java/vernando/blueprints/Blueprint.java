@@ -2,11 +2,12 @@ package vernando.blueprints;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
-import net.minecraft.client.render.GameRenderer;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.Tessellator;
 import net.minecraft.client.render.VertexFormat;
 import net.minecraft.client.render.VertexFormats;
@@ -169,7 +170,7 @@ public class Blueprint {
 		buffer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
 		buffer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
 
-		RenderSystem.setShader(GameRenderer::getPositionTexColorProgram);
+		RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
 		RenderSystem.setShaderTexture(0, textureId);
 		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
 
@@ -198,7 +199,7 @@ public class Blueprint {
 			return;
 		}
 		if (includeFrame) {
-			drawContext.drawTexture(Identifier.of(Main.MOD_ID, "item_frame.png"), x, y, 0, 0, width, height, width, height);
+			drawContext.drawTexture(RenderLayer::getGuiTexturedOverlay, Identifier.of(Main.MOD_ID, "item_frame.png"), x, y, 0, 0, width, height, width, height);
 		}
 
 		x += ((2/14f) * width) + 1;
@@ -207,7 +208,7 @@ public class Blueprint {
 		width *= (10/14f);
 		height *= (8/12f);
 		
-		drawContext.drawTexture(textureId, x, y, 0, 0, width, height, width, height);
+		drawContext.drawTexture(RenderLayer::getGuiTexturedOverlay, textureId, x, y, 0, 0, width, height, width, height);
 	}
 
 	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {
