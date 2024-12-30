@@ -3,6 +3,7 @@ package vernando.blueprints;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import java.util.ArrayList;
@@ -141,7 +142,7 @@ public class BlueprintsConfigScreen extends Screen {
       });
 
       context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
-      context.drawTexture(Identifier.of(Main.MOD_ID, "icon.png"), width - 45, 10, 0, 0, 30, 30, 30, 30);
+      context.drawTexture(RenderLayer::getGuiTexturedOverlay, Identifier.of(Main.MOD_ID, "icon.png"), width - 45, 10, 0, 0, 30, 30, 30, 30);
 
       // render page number between buttons at the bottom
       if (rowsPerPage > 0 && imagesPerRow > 0) {
