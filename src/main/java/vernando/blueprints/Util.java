@@ -153,7 +153,7 @@ public class Util {
 				Main.LOGGER.error("Failed to load image: " + texturePath);
 				return null;
 			}			
-			NativeImageBackedTexture texture = new NativeImageBackedTexture(image);
+			NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> texturePath, image);
 			Main.LOGGER.info("Registering texture: " + textureId);
 			client.getTextureManager().registerTexture(textureId, texture);
 			return texture;
