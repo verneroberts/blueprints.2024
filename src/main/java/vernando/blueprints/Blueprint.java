@@ -2,15 +2,9 @@ package vernando.blueprints;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgramKeys;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.BufferBuilder;
-import net.minecraft.client.render.BufferRenderer;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormat;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -19,6 +13,8 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Direction.Axis;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -26,7 +22,7 @@ import org.lwjgl.opengl.GL11;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
-import com.mojang.blaze3d.systems.RenderSystem;
+
 import java.io.FileReader;
 
 public class Blueprint {
@@ -51,15 +47,95 @@ public class Blueprint {
 	private String configFile;
 	private boolean visibility;
 
+	// GIF animation support
+	private Util.GifAnimation gifAnimation;
+	private boolean isAnimated;
+	private int currentFrame;
+	private long lastFrameTime;
+	private List<NativeImageBackedTexture> frameTextures;
+	private List<Identifier> frameTextureIds;
+
 	public Blueprint(String filename) {
 		texturePath = filename;
 		configFile = texturePath + ".json";
 		id = Long.toString(System.currentTimeMillis());
 		LoadConfig();
+		
+		// Initialize animation data
+		frameTextures = new ArrayList<>();
+		frameTextureIds = new ArrayList<>();
+		currentFrame = 0;
+		lastFrameTime = System.currentTimeMillis();
+		
+		// Load texture(s) - handle both static images and GIFs
+		if (Util.IsGifFile(texturePath)) {
+			loadGifTextures();
+		} else {
+			loadStaticTexture();
+		}
+		
+		SaveConfig();
+	}
+	
+	private void loadStaticTexture() {
 		textureId = Identifier.of(Main.MOD_ID, id);
 		texture = Util.RegisterTexture(texturePath, textureId);
-		aspectRatio = (float) texture.getImage().getWidth() / (float) texture.getImage().getHeight();
-		SaveConfig();
+		if (texture != null) {
+			aspectRatio = (float) texture.getImage().getWidth() / (float) texture.getImage().getHeight();
+		}
+		isAnimated = false;
+	}
+	
+	private void loadGifTextures() {
+		gifAnimation = Util.LoadGif(texturePath);
+		isAnimated = gifAnimation.isAnimated;
+		
+		if (gifAnimation.frames.isEmpty()) {
+			Main.LOGGER.error("No frames loaded from GIF: " + texturePath);
+			return;
+		}
+		
+		// Register textures for each frame
+		MinecraftClient client = MinecraftClient.getInstance();
+		int[] index = {0};
+		gifAnimation.frames.forEach(frame -> {
+			Identifier frameId = Identifier.of(Main.MOD_ID, id + "_frame_" + index[0]);
+			NativeImageBackedTexture frameTexture = new NativeImageBackedTexture(() -> texturePath + " frame " + index[0], frame.image);
+			
+			client.getTextureManager().registerTexture(frameId, frameTexture);
+			frameTextures.add(frameTexture);
+			frameTextureIds.add(frameId);
+			index[0]++;
+		});
+		
+		// Set up initial texture and aspect ratio
+		if (!frameTextures.isEmpty()) {
+			texture = frameTextures.get(0);
+			textureId = frameTextureIds.get(0);
+			aspectRatio = (float) texture.getImage().getWidth() / (float) texture.getImage().getHeight();
+		}
+		
+		Main.LOGGER.info("Loaded animated GIF with " + gifAnimation.frames.size() + " frames: " + texturePath);
+	}
+	
+	private void updateAnimation() {
+		if (!isAnimated || gifAnimation == null || gifAnimation.frames.isEmpty()) {
+			return;
+		}
+		
+		long currentTime = System.currentTimeMillis();
+		Util.GifFrame currentGifFrame = gifAnimation.frames.get(currentFrame);
+		
+		if (currentTime - lastFrameTime >= currentGifFrame.delayMs) {
+			currentFrame = (currentFrame + 1) % gifAnimation.frames.size();
+			lastFrameTime = currentTime;
+			
+			// Update current texture to the new frame
+			if (currentFrame < frameTextures.size() && currentFrame < frameTextureIds.size()) {
+				texture = frameTextures.get(currentFrame);
+				textureId = frameTextureIds.get(currentFrame);
+			}
+		}
 	}
 
 	private void LoadConfig() {
@@ -140,13 +216,19 @@ public class Blueprint {
 	public void render(WorldRenderContext context, Boolean renderThroughBlocks, Boolean renderBothSides) {
 		if (texture == null || !visibility) {
 			return;
-		}		
-
+		}
+		
+		// Update animation frame if this is an animated GIF
+		updateAnimation();
+		
 		Camera camera = context.camera();
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
 		Vec3d transformedPosition = targetPosition.subtract(camera.getPos());
 
+		// Create a new matrix stack and properly isolate transformations
 		MatrixStack matrixStack = new MatrixStack();
+		matrixStack.push(); // Push a new matrix to isolate transformations
+		
 		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
 		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
 		matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z);
@@ -156,41 +238,95 @@ public class Blueprint {
 		matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotationZ));
 
 		Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
-		Tessellator tessellator = Tessellator.getInstance();
-
-		if (alpha < 1f) {
-			RenderSystem.enableBlend();
-			RenderSystem.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-		}
-
-		BufferBuilder buffer = tessellator.begin(VertexFormat.DrawMode.QUADS, VertexFormats.POSITION_TEXTURE_COLOR);
-		// add vertices in a rectangle from -scale to +scale
-		buffer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
-		buffer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
-		buffer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
-		buffer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
-
-		RenderSystem.setShader(ShaderProgramKeys.POSITION_TEX_COLOR);
-		RenderSystem.setShaderTexture(0, textureId);
-		RenderSystem.setShaderColor(1f, 1f, 1f, alpha);
-
-		if (renderThroughBlocks) {
-			RenderSystem.depthFunc(GL11.GL_ALWAYS);
-		}
 		
-		if (renderBothSides) {
-			RenderSystem.disableCull();
+		// Store current render state to restore it later - be more comprehensive
+		boolean wasBlendEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
+		boolean wasDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+		boolean wasCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+		int[] currentBlendSrc = new int[1];
+		int[] currentBlendDst = new int[1];
+		GL11.glGetIntegerv(GL11.GL_BLEND_SRC, currentBlendSrc);
+		GL11.glGetIntegerv(GL11.GL_BLEND_DST, currentBlendDst);
+		
+		// Store current depth function to restore it
+		int[] currentDepthFunc = new int[1];
+		GL11.glGetIntegerv(GL11.GL_DEPTH_FUNC, currentDepthFunc);
+		
+		try {
+			// Don't set global shader color alpha - keep it at 1.0 to not affect other rendering
+			// The alpha will be applied per-vertex instead
+			
+			// Enable blending for transparency
+			if (!wasBlendEnabled) {
+				GL11.glEnable(GL11.GL_BLEND);
+			}
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+			// Handle depth testing
+			if (renderThroughBlocks) {
+				if (wasDepthTestEnabled) {
+					GL11.glDisable(GL11.GL_DEPTH_TEST);
+				}
+			} else {
+				if (!wasDepthTestEnabled) {
+					GL11.glEnable(GL11.GL_DEPTH_TEST);
+				}
+			}
+			
+			// Handle face culling
+			if (renderBothSides) {
+				if (wasCullFaceEnabled) {
+					GL11.glDisable(GL11.GL_CULL_FACE);
+				}
+			} else {
+				if (!wasCullFaceEnabled) {
+					GL11.glEnable(GL11.GL_CULL_FACE);
+				}
+			}
+
+			// Use a render layer that only requires position, texture, and color
+			RenderLayer renderLayer = RenderLayer.getGuiTextured(textureId);
+			var bufferBuilder = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+			var vertexConsumer = bufferBuilder.getBuffer(renderLayer);
+			
+			// Add vertices for a quad (rectangle) with alpha applied per-vertex to avoid affecting other blueprints
+			vertexConsumer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
+			vertexConsumer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
+			vertexConsumer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
+			vertexConsumer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
+
+			// Ensure this blueprint's vertices are drawn before the next blueprint
+			bufferBuilder.drawCurrentLayer();
+			
+		} finally {
+			// Always restore matrix stack state
+			matrixStack.pop();
+			
+			// Properly restore all render state to exactly what it was before
+			if (wasCullFaceEnabled && !GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
+				GL11.glEnable(GL11.GL_CULL_FACE);
+			} else if (!wasCullFaceEnabled && GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
+				GL11.glDisable(GL11.GL_CULL_FACE);
+			}
+			
+			if (wasDepthTestEnabled && !GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+			} else if (!wasDepthTestEnabled && GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
+			}
+			
+			// Restore depth function
+			GL11.glDepthFunc(currentDepthFunc[0]);
+			
+			if (wasBlendEnabled && !GL11.glIsEnabled(GL11.GL_BLEND)) {
+				GL11.glEnable(GL11.GL_BLEND);
+			} else if (!wasBlendEnabled && GL11.glIsEnabled(GL11.GL_BLEND)) {
+				GL11.glDisable(GL11.GL_BLEND);
+			}
+			
+			// Restore original blend function
+			GL11.glBlendFunc(currentBlendSrc[0], currentBlendDst[0]);
 		}
-
-		// ensure the blueprint is rendered behind other blocks
-		RenderSystem.enableDepthTest();
-		
-		BufferRenderer.drawWithGlobalProgram(buffer.end());
-
-		RenderSystem.enableCull();
-		matrixStack.pop();
-		RenderSystem.setShaderColor(1f, 1f, 1f, 1);
-		
 	}
 
 	public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height, boolean includeFrame) {
