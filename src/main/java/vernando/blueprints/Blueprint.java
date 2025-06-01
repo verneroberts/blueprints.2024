@@ -140,7 +140,10 @@ public class Blueprint {
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
 		Vec3d transformedPosition = targetPosition.subtract(camera.getPos());
 
+		// Create a new matrix stack and properly isolate transformations
 		MatrixStack matrixStack = new MatrixStack();
+		matrixStack.push(); // Push a new matrix to isolate transformations
+		
 		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
 		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
 		matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z);
@@ -151,7 +154,7 @@ public class Blueprint {
 
 		Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
 		
-		// Store current render state to restore it later
+		// Store current render state to restore it later - be more comprehensive
 		boolean wasBlendEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
 		boolean wasDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
 		boolean wasCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
@@ -160,68 +163,85 @@ public class Blueprint {
 		GL11.glGetIntegerv(GL11.GL_BLEND_SRC, currentBlendSrc);
 		GL11.glGetIntegerv(GL11.GL_BLEND_DST, currentBlendDst);
 		
-		// Don't set global shader color alpha - keep it at 1.0 to not affect other rendering
-		// The alpha will be applied per-vertex instead
+		// Store current depth function to restore it
+		int[] currentDepthFunc = new int[1];
+		GL11.glGetIntegerv(GL11.GL_DEPTH_FUNC, currentDepthFunc);
 		
-		// Enable blending for transparency
-		if (!wasBlendEnabled) {
-			GL11.glEnable(GL11.GL_BLEND);
-		}
-		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		try {
+			// Don't set global shader color alpha - keep it at 1.0 to not affect other rendering
+			// The alpha will be applied per-vertex instead
+			
+			// Enable blending for transparency
+			if (!wasBlendEnabled) {
+				GL11.glEnable(GL11.GL_BLEND);
+			}
+			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 
-		// Handle depth testing
-		if (renderThroughBlocks) {
-			if (wasDepthTestEnabled) {
-				GL11.glDisable(GL11.GL_DEPTH_TEST);
+			// Handle depth testing
+			if (renderThroughBlocks) {
+				if (wasDepthTestEnabled) {
+					GL11.glDisable(GL11.GL_DEPTH_TEST);
+				}
+			} else {
+				if (!wasDepthTestEnabled) {
+					GL11.glEnable(GL11.GL_DEPTH_TEST);
+				}
 			}
-		} else {
-			if (!wasDepthTestEnabled) {
-				GL11.glEnable(GL11.GL_DEPTH_TEST);
+			
+			// Handle face culling
+			if (renderBothSides) {
+				if (wasCullFaceEnabled) {
+					GL11.glDisable(GL11.GL_CULL_FACE);
+				}
+			} else {
+				if (!wasCullFaceEnabled) {
+					GL11.glEnable(GL11.GL_CULL_FACE);
+				}
 			}
-		}
-		
-		// Handle face culling
-		if (renderBothSides) {
-			if (wasCullFaceEnabled) {
+
+			// Use a render layer that only requires position, texture, and color
+			RenderLayer renderLayer = RenderLayer.getGuiTextured(textureId);
+			var bufferBuilder = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+			var vertexConsumer = bufferBuilder.getBuffer(renderLayer);
+			
+			// Add vertices for a quad (rectangle) with alpha applied per-vertex to avoid affecting other blueprints
+			vertexConsumer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
+			vertexConsumer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
+			vertexConsumer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
+			vertexConsumer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
+
+			// Ensure this blueprint's vertices are drawn before the next blueprint
+			bufferBuilder.drawCurrentLayer();
+			
+		} finally {
+			// Always restore matrix stack state
+			matrixStack.pop();
+			
+			// Properly restore all render state to exactly what it was before
+			if (wasCullFaceEnabled && !GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
+				GL11.glEnable(GL11.GL_CULL_FACE);
+			} else if (!wasCullFaceEnabled && GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
 				GL11.glDisable(GL11.GL_CULL_FACE);
 			}
-		} else {
-			if (!wasCullFaceEnabled) {
-				GL11.glEnable(GL11.GL_CULL_FACE);
+			
+			if (wasDepthTestEnabled && !GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+			} else if (!wasDepthTestEnabled && GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
 			}
+			
+			// Restore depth function
+			GL11.glDepthFunc(currentDepthFunc[0]);
+			
+			if (wasBlendEnabled && !GL11.glIsEnabled(GL11.GL_BLEND)) {
+				GL11.glEnable(GL11.GL_BLEND);
+			} else if (!wasBlendEnabled && GL11.glIsEnabled(GL11.GL_BLEND)) {
+				GL11.glDisable(GL11.GL_BLEND);
+			}
+			
+			// Restore original blend function
+			GL11.glBlendFunc(currentBlendSrc[0], currentBlendDst[0]);
 		}
-
-		// Use a render layer that only requires position, texture, and color
-		RenderLayer renderLayer = RenderLayer.getGuiTextured(textureId);
-		var vertexConsumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().getBuffer(renderLayer);
-		
-		// Add vertices for a quad (rectangle) with alpha applied per-vertex to avoid affecting other blueprints
-		vertexConsumer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
-		vertexConsumer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
-		vertexConsumer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
-		vertexConsumer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
-
-		// Properly restore all render state to exactly what it was before
-		if (wasCullFaceEnabled && !GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
-			GL11.glEnable(GL11.GL_CULL_FACE);
-		} else if (!wasCullFaceEnabled && GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
-			GL11.glDisable(GL11.GL_CULL_FACE);
-		}
-		
-		if (wasDepthTestEnabled && !GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
-			GL11.glEnable(GL11.GL_DEPTH_TEST);
-		} else if (!wasDepthTestEnabled && GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
-			GL11.glDisable(GL11.GL_DEPTH_TEST);
-		}
-		
-		if (wasBlendEnabled && !GL11.glIsEnabled(GL11.GL_BLEND)) {
-			GL11.glEnable(GL11.GL_BLEND);
-		} else if (!wasBlendEnabled && GL11.glIsEnabled(GL11.GL_BLEND)) {
-			GL11.glDisable(GL11.GL_BLEND);
-		}
-		
-		// Restore original blend function
-		GL11.glBlendFunc(currentBlendSrc[0], currentBlendDst[0]);
 	}
 
 	public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height, boolean includeFrame) {
