@@ -2,13 +2,9 @@ package vernando.blueprints;
 
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.ShaderProgram;
 import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.render.BufferBuilder;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
-import net.minecraft.client.render.Tessellator;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -24,7 +20,7 @@ import org.lwjgl.opengl.GL11;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
-import com.mojang.blaze3d.systems.RenderSystem;
+
 import java.io.FileReader;
 
 public class Blueprint {
@@ -140,12 +136,92 @@ public class Blueprint {
 			return;
 		}
 		
-		// For now, we'll implement a basic version that compiles
-		// The full rendering functionality may need to be reimplemented with the new MC 1.21.5 APIs
+		Camera camera = context.camera();
+		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
+		Vec3d transformedPosition = targetPosition.subtract(camera.getPos());
+
+		MatrixStack matrixStack = new MatrixStack();
+		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(camera.getPitch()));
+		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(camera.getYaw() + 180.0F));
+		matrixStack.translate(transformedPosition.x, transformedPosition.y, transformedPosition.z);
+
+		matrixStack.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotationX));
+		matrixStack.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotationY));
+		matrixStack.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotationZ));
+
+		Matrix4f positionMatrix = matrixStack.peek().getPositionMatrix();
 		
-		// TODO: Implement proper rendering using the new Minecraft 1.21.5 rendering system
-		// This is a placeholder that will compile but won't render properly
-		Main.LOGGER.info("Blueprint render called for: " + texturePath);
+		// Store current render state to restore it later
+		boolean wasBlendEnabled = GL11.glIsEnabled(GL11.GL_BLEND);
+		boolean wasDepthTestEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+		boolean wasCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+		int[] currentBlendSrc = new int[1];
+		int[] currentBlendDst = new int[1];
+		GL11.glGetIntegerv(GL11.GL_BLEND_SRC, currentBlendSrc);
+		GL11.glGetIntegerv(GL11.GL_BLEND_DST, currentBlendDst);
+		
+		// Don't set global shader color alpha - keep it at 1.0 to not affect other rendering
+		// The alpha will be applied per-vertex instead
+		
+		// Enable blending for transparency
+		if (!wasBlendEnabled) {
+			GL11.glEnable(GL11.GL_BLEND);
+		}
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+
+		// Handle depth testing
+		if (renderThroughBlocks) {
+			if (wasDepthTestEnabled) {
+				GL11.glDisable(GL11.GL_DEPTH_TEST);
+			}
+		} else {
+			if (!wasDepthTestEnabled) {
+				GL11.glEnable(GL11.GL_DEPTH_TEST);
+			}
+		}
+		
+		// Handle face culling
+		if (renderBothSides) {
+			if (wasCullFaceEnabled) {
+				GL11.glDisable(GL11.GL_CULL_FACE);
+			}
+		} else {
+			if (!wasCullFaceEnabled) {
+				GL11.glEnable(GL11.GL_CULL_FACE);
+			}
+		}
+
+		// Use a render layer that only requires position, texture, and color
+		RenderLayer renderLayer = RenderLayer.getGuiTextured(textureId);
+		var vertexConsumer = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers().getBuffer(renderLayer);
+		
+		// Add vertices for a quad (rectangle) with alpha applied per-vertex to avoid affecting other blueprints
+		vertexConsumer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
+		vertexConsumer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
+		vertexConsumer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
+		vertexConsumer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
+
+		// Properly restore all render state to exactly what it was before
+		if (wasCullFaceEnabled && !GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
+			GL11.glEnable(GL11.GL_CULL_FACE);
+		} else if (!wasCullFaceEnabled && GL11.glIsEnabled(GL11.GL_CULL_FACE)) {
+			GL11.glDisable(GL11.GL_CULL_FACE);
+		}
+		
+		if (wasDepthTestEnabled && !GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
+			GL11.glEnable(GL11.GL_DEPTH_TEST);
+		} else if (!wasDepthTestEnabled && GL11.glIsEnabled(GL11.GL_DEPTH_TEST)) {
+			GL11.glDisable(GL11.GL_DEPTH_TEST);
+		}
+		
+		if (wasBlendEnabled && !GL11.glIsEnabled(GL11.GL_BLEND)) {
+			GL11.glEnable(GL11.GL_BLEND);
+		} else if (!wasBlendEnabled && GL11.glIsEnabled(GL11.GL_BLEND)) {
+			GL11.glDisable(GL11.GL_BLEND);
+		}
+		
+		// Restore original blend function
+		GL11.glBlendFunc(currentBlendSrc[0], currentBlendDst[0]);
 	}
 
 	public void renderThumbnail(DrawContext drawContext, int x, int y, int width, int height, boolean includeFrame) {
