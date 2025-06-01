@@ -13,6 +13,8 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.Direction.Axis;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -45,15 +47,95 @@ public class Blueprint {
 	private String configFile;
 	private boolean visibility;
 
+	// GIF animation support
+	private Util.GifAnimation gifAnimation;
+	private boolean isAnimated;
+	private int currentFrame;
+	private long lastFrameTime;
+	private List<NativeImageBackedTexture> frameTextures;
+	private List<Identifier> frameTextureIds;
+
 	public Blueprint(String filename) {
 		texturePath = filename;
 		configFile = texturePath + ".json";
 		id = Long.toString(System.currentTimeMillis());
 		LoadConfig();
+		
+		// Initialize animation data
+		frameTextures = new ArrayList<>();
+		frameTextureIds = new ArrayList<>();
+		currentFrame = 0;
+		lastFrameTime = System.currentTimeMillis();
+		
+		// Load texture(s) - handle both static images and GIFs
+		if (Util.IsGifFile(texturePath)) {
+			loadGifTextures();
+		} else {
+			loadStaticTexture();
+		}
+		
+		SaveConfig();
+	}
+	
+	private void loadStaticTexture() {
 		textureId = Identifier.of(Main.MOD_ID, id);
 		texture = Util.RegisterTexture(texturePath, textureId);
-		aspectRatio = (float) texture.getImage().getWidth() / (float) texture.getImage().getHeight();
-		SaveConfig();
+		if (texture != null) {
+			aspectRatio = (float) texture.getImage().getWidth() / (float) texture.getImage().getHeight();
+		}
+		isAnimated = false;
+	}
+	
+	private void loadGifTextures() {
+		gifAnimation = Util.LoadGif(texturePath);
+		isAnimated = gifAnimation.isAnimated;
+		
+		if (gifAnimation.frames.isEmpty()) {
+			Main.LOGGER.error("No frames loaded from GIF: " + texturePath);
+			return;
+		}
+		
+		// Register textures for each frame
+		MinecraftClient client = MinecraftClient.getInstance();
+		int[] index = {0};
+		gifAnimation.frames.forEach(frame -> {
+			Identifier frameId = Identifier.of(Main.MOD_ID, id + "_frame_" + index[0]);
+			NativeImageBackedTexture frameTexture = new NativeImageBackedTexture(() -> texturePath + " frame " + index[0], frame.image);
+			
+			client.getTextureManager().registerTexture(frameId, frameTexture);
+			frameTextures.add(frameTexture);
+			frameTextureIds.add(frameId);
+			index[0]++;
+		});
+		
+		// Set up initial texture and aspect ratio
+		if (!frameTextures.isEmpty()) {
+			texture = frameTextures.get(0);
+			textureId = frameTextureIds.get(0);
+			aspectRatio = (float) texture.getImage().getWidth() / (float) texture.getImage().getHeight();
+		}
+		
+		Main.LOGGER.info("Loaded animated GIF with " + gifAnimation.frames.size() + " frames: " + texturePath);
+	}
+	
+	private void updateAnimation() {
+		if (!isAnimated || gifAnimation == null || gifAnimation.frames.isEmpty()) {
+			return;
+		}
+		
+		long currentTime = System.currentTimeMillis();
+		Util.GifFrame currentGifFrame = gifAnimation.frames.get(currentFrame);
+		
+		if (currentTime - lastFrameTime >= currentGifFrame.delayMs) {
+			currentFrame = (currentFrame + 1) % gifAnimation.frames.size();
+			lastFrameTime = currentTime;
+			
+			// Update current texture to the new frame
+			if (currentFrame < frameTextures.size() && currentFrame < frameTextureIds.size()) {
+				texture = frameTextures.get(currentFrame);
+				textureId = frameTextureIds.get(currentFrame);
+			}
+		}
 	}
 
 	private void LoadConfig() {
@@ -135,6 +217,9 @@ public class Blueprint {
 		if (texture == null || !visibility) {
 			return;
 		}
+		
+		// Update animation frame if this is an animated GIF
+		updateAnimation();
 		
 		Camera camera = context.camera();
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
