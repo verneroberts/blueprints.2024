@@ -23,7 +23,6 @@ import org.lwjgl.opengl.GL11;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 
 import java.io.FileReader;
 
@@ -221,8 +220,7 @@ public class Blueprint {
 			return;
 		}
 
-		// todo: work out if this is the correct render layer
-		RenderLayer renderLayer = RenderLayer.getDebugQuads();
+		RenderLayer renderLayer = RenderLayer.getEntityCutout(textureId);
 
 		// Update animation frame if this is an animated GIF
 		updateAnimation();
@@ -286,14 +284,26 @@ public class Blueprint {
 					GL11.glEnable(GL11.GL_CULL_FACE);
 				}
 			}
-
-			var bufferBuilder =	MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
+			var bufferBuilder = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
 			var vertexConsumer = bufferBuilder.getBuffer(renderLayer);
-			
-			vertexConsumer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 1f);
-			vertexConsumer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 1f);
-			vertexConsumer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(1f, 0f);
-			vertexConsumer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha).texture(0f, 0f);
+
+			// Get lightmap coordinates (usually full brightness for UI elements)
+			int lightmapUV = 0xF000F0; // Full brightness lightmap
+			int overlayUV = 0; // No overlay (UV1)
+
+			// Normal vector pointing towards camera (since we're facing the camera)
+			float normalX = 0.0f;
+			float normalY = 0.0f;
+			float normalZ = 1.0f;
+
+			vertexConsumer.vertex(positionMatrix, -scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha)
+					.texture(0f, 1f).overlay(overlayUV).light(lightmapUV).normal(normalX, normalY, normalZ);
+			vertexConsumer.vertex(positionMatrix, scaleX, -scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha)
+					.texture(1f, 1f).overlay(overlayUV).light(lightmapUV).normal(normalX, normalY, normalZ);
+			vertexConsumer.vertex(positionMatrix, scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha)
+					.texture(1f, 0f).overlay(overlayUV).light(lightmapUV).normal(normalX, normalY, normalZ);
+			vertexConsumer.vertex(positionMatrix, -scaleX, scaleY / aspectRatio, 0).color(1f, 1f, 1f, alpha)
+					.texture(0f, 0f).overlay(overlayUV).light(lightmapUV).normal(normalX, normalY, normalZ);
 
 			bufferBuilder.drawCurrentLayer();
 
@@ -345,7 +355,8 @@ public class Blueprint {
 		width *= (10 / 14f);
 		height *= (8 / 12f);
 
-		drawContext.drawTexture(RenderPipelines.GUI_TEXTURED, textureId, x, y, 0.0f, 0.0f, width, height, width, height);		
+		drawContext.drawTexture(RenderPipelines.GUI_TEXTURED, textureId, x, y, 0.0f, 0.0f, width, height, width,
+				height);
 	}
 
 	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {
