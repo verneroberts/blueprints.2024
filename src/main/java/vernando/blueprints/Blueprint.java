@@ -220,7 +220,7 @@ public class Blueprint {
 			return;
 		}
 
-		RenderLayer renderLayer = RenderLayer.getEntityCutout(textureId);
+		RenderLayer renderLayer = RenderLayer.getEntityNoOutline(textureId);
 
 		// Update animation frame if this is an animated GIF
 		updateAnimation();
