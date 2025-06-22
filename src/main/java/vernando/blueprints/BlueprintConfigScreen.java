@@ -1,8 +1,11 @@
 package vernando.blueprints;
 
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.gui.widget.TextWidget;
 import net.minecraft.text.Text;
 
 import java.util.ArrayList;
@@ -44,10 +47,13 @@ public class BlueprintConfigScreen extends Screen {
 		client.options.getMenuBackgroundBlurriness().setValue(blurSetting);
 
 	}
-
 	@Override
 	protected void init() {
+		System.out.println("BlueprintConfigScreen.init() called");
+		System.out.println("Screen dimensions: " + this.width + "x" + this.height);
+		
 		int width = client.getWindow().getScaledWidth();
+		System.out.println("Window scaled width: " + width);
 
 		// make sure the blueprint is visible if we are here
 		if (!blueprint.isVisible()) {
@@ -88,7 +94,6 @@ public class BlueprintConfigScreen extends Screen {
 		inputBoxes.add(scaleX);
 		inputBoxes.add(scaleY);
 		inputBoxes.add(alpha);
-
 		addDrawableChild(posX);
 		addDrawableChild(posY);
 		addDrawableChild(posZ);
@@ -98,6 +103,24 @@ public class BlueprintConfigScreen extends Screen {
 		addDrawableChild(scaleX);
 		addDrawableChild(scaleY);
 		addDrawableChild(alpha);
+		// Add text labels as widgets
+		int textOffset = rowHeight / 2 - 4 - 4; // Move up by 4 additional pixels
+		
+		// Title/blueprint name
+		addDrawableChild(new TextWidget(c1x, row(0) + textOffset, this.textRenderer.getWidth(blueprint.getName()), rowHeight, Text.literal(blueprint.getName()), this.textRenderer));
+		
+		// Section headers
+		addDrawableChild(new TextWidget(c1x + 4, 5 + row(1) + textOffset, this.textRenderer.getWidth("Position"), rowHeight, Text.literal("Position"), this.textRenderer));
+		addDrawableChild(new TextWidget(c2x + 4, 5 + row(1) + textOffset, this.textRenderer.getWidth("Rotation"), rowHeight, Text.literal("Rotation"), this.textRenderer));
+		addDrawableChild(new TextWidget(c1x + 4, 5 + row(6) + textOffset, this.textRenderer.getWidth("Scale"), rowHeight, Text.literal("Scale"), this.textRenderer));
+		addDrawableChild(new TextWidget(c2x + 4, 5 + row(6) + textOffset, this.textRenderer.getWidth("Alpha"), rowHeight, Text.literal("Alpha"), this.textRenderer));
+		
+		// Axis labels
+		addDrawableChild(new TextWidget(c0x, row(2) + textOffset, this.textRenderer.getWidth("X"), rowHeight, Text.literal("X"), this.textRenderer));
+		addDrawableChild(new TextWidget(c0x, row(3) + textOffset, this.textRenderer.getWidth("Y"), rowHeight, Text.literal("Y"), this.textRenderer));
+		addDrawableChild(new TextWidget(c0x, row(4) + textOffset, this.textRenderer.getWidth("Z"), rowHeight, Text.literal("Z"), this.textRenderer));
+		addDrawableChild(new TextWidget(c0x, row(7) + textOffset, this.textRenderer.getWidth("W"), rowHeight, Text.literal("W"), this.textRenderer));
+		addDrawableChild(new TextWidget(c0x, row(8) + textOffset, this.textRenderer.getWidth("H"), rowHeight, Text.literal("H"), this.textRenderer));
 
 		addDrawableChild(
 				ButtonWidget.builder(Text.literal("To Player"), b -> {
@@ -133,31 +156,18 @@ public class BlueprintConfigScreen extends Screen {
 				})
 						.dimensions(c1x, row(9), columnWidth, rowHeight)
 						.build());
-		
-		addDrawableChild(
+				addDrawableChild(
 				ButtonWidget.builder(Text.literal("Done"), b -> {
 					this.close();
 				})
-						.dimensions(width - columnWidth - columnPadding, height - rowHeight - rowPadding, columnWidth,
+						.dimensions(width - columnWidth - columnPadding, this.height - rowHeight - rowPadding, columnWidth,
 								rowHeight)
 						.build());
-	}
-
-	@Override
-	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-		super.render(context, mouseX, mouseY, delta);
-
-		int textOffset = rowHeight / 2 - 4;
-		context.drawTextWithShadow(textRenderer, Text.literal("Position"), c1x + 4, 5 + row(1) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Rotation"), c2x + 4, 5 + row(1) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Scale"), c1x + 4, 5 + row(6) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Alpha"), c2x + 4, 5 + row(6) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("X"), c0x, row(2) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Y"), c0x, row(3) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("Z"), c0x, row(4) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("W"), c0x, row(7) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal("H"), c0x, row(8) + textOffset, 0xffffff);
-		context.drawTextWithShadow(textRenderer, Text.literal(blueprint.getName()), c1x, row(0) + textOffset, 0xffffff);
+	}	
+		@Override
+	public void render(DrawContext context, int mouseX, int mouseY, float delta) {		
+	    super.render(context, mouseX, mouseY, delta);
+		// Text labels are now handled by TextWidget instances, no manual rendering needed
 	}
 
 	@Override
