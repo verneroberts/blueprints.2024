@@ -587,4 +587,15 @@ public class Blueprint {
 	public void setVisibility(String string) {
 		visibility = Boolean.parseBoolean(string);
 	}
+
+	/**
+	 * Calculate the distance from the camera to this blueprint
+	 * @param camera The camera to calculate distance from
+	 * @return The distance in blocks
+	 */
+	public double getDistanceFromCamera(Camera camera) {
+		Vec3d cameraPos = camera.getPos();
+		Vec3d blueprintPos = new Vec3d(positionX, positionY, positionZ);
+		return cameraPos.distanceTo(blueprintPos);
+	}
 }

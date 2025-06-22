@@ -80,14 +80,18 @@ public class Main implements ModInitializer {
 				return;
 			}
 
-		});
-
-		WorldRenderEvents.END.register(context -> {
+		});		WorldRenderEvents.END.register(context -> {
 			if (visible) {
 				BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
-				for (Blueprint blueprint : blueprintManager.blueprints) {
-					blueprint.render(context, Settings.getRenderThroughBlocks(), true);
-				}
+				
+				// Create a temporary sorted copy for rendering (furthest to closest)
+				blueprintManager.blueprints.stream()
+					.sorted((a, b) -> {
+						double distanceA = a.getDistanceFromCamera(context.camera());
+						double distanceB = b.getDistanceFromCamera(context.camera());
+						return Double.compare(distanceB, distanceA); // Furthest first
+					})
+					.forEach(blueprint -> blueprint.render(context, Settings.getRenderThroughBlocks(), true));
 				
 				BlueprintsHud.getInstance().render(context);
 			}
