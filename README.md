@@ -105,6 +105,25 @@ This ensures the mod version continues across Minecraft updates while maintainin
 ```
 - Built JAR will be located in `build/libs/`
 
+### Testing
+
+This project includes comprehensive unit testing using JUnit 5, Mockito, and JaCoCo for coverage reporting.
+
+**Run all tests:**
+```bash
+.\gradlew test
+```
+
+**Run tests with coverage report:**
+```bash
+.\gradlew test jacocoTestReport
+```
+
+**View coverage report:**
+- Open `build/reports/jacoco/test/html/index.html` in your browser
+
+For more information about writing and running tests, see [TESTING.md](TESTING.md).
+
 ### Upgrading Dependencies
 
 When updating the mod:

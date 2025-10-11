@@ -67,42 +67,9 @@ public class BlueprintsManager {
      * Check if a file is a supported image format
      */
     public static boolean isImageFile(String filename) {
-        if (filename == null || filename.isEmpty()) {
-            return false;
-        }
-        
-        String lowerFilename = filename.toLowerCase();
-        int lastDotIndex = lowerFilename.lastIndexOf('.');
-        
-        if (lastDotIndex == -1 || lastDotIndex == lowerFilename.length() - 1) {
-            return false; // No extension or ends with dot
-        }
-        
-        String extension = lowerFilename.substring(lastDotIndex + 1);
-        
-        // Check against our comprehensive static list
-        if (SUPPORTED_IMAGE_EXTENSIONS.contains(extension)) {
-            return true;
-        }
-        
-        // Check against dynamically detected formats
-        Set<String> dynamicFormats = getDynamicallySupportedFormats();
-        if (dynamicFormats.contains(extension)) {
-            return true;
-        }
-        
-        // Special handling for formats with multiple extensions
-        switch (extension) {
-            case "jpe":
-            case "jfif":
-                return true; // JPEG variants
-            case "tiff":
-                return true; // TIFF variant
-            case "svg":
-                return true; // SVG (might need special handling)
-            default:
-                return false;
-        }
+        // ValidationUtils.isImageFile already checks static formats first,
+        // then falls back to dynamic formats if provided
+        return ValidationUtils.isImageFile(filename, getDynamicallySupportedFormats());
     }
 
     public ArrayList<Blueprint> ScanFileSystemForImages() {
