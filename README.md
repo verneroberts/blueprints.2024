@@ -59,6 +59,21 @@ See the mod in action: [Building with Blueprints Demo](https://youtu.be/8ToyyT0e
 
 ---
 
+## Versioning
+
+This mod follows a versioning scheme of `{minecraft_version}.{mod_version}`:
+
+- **Minecraft Version**: The first part matches the target Minecraft version (e.g., `1.21.9`)
+- **Mod Version**: The last number tracks the mod's feature releases independently of Minecraft updates
+- **Examples**:
+  - `1.21.8.7` - Mod version 7 for Minecraft 1.21.8
+  - `1.21.9.7` - Same mod version 7, updated for Minecraft 1.21.9
+  - `1.21.9.8` - Mod version 8 for Minecraft 1.21.9 with new features
+
+This ensures the mod version continues across Minecraft updates while maintaining compatibility information.
+
+---
+
 ## Development
 
 ### Prerequisites
@@ -97,13 +112,14 @@ When updating the mod:
 1. Reference the [Fabric Example Mod](https://github.com/FabricMC/fabric-example-mod/) for latest practices
 2. Update these files:
    - `build.gradle`
-   - `gradle.properties` 
+   - `gradle.properties`
    - `gradle/wrapper/gradle-wrapper.properties`
    - `src/main/resources/fabric.mod.json`
-3. Clean and rebuild:
+3. **Important**: When updating to a new Minecraft version, keep the existing mod version number. For example, if updating from `1.21.8.7` to Minecraft 1.21.9, the new version should be `1.21.9.7`.
+4. Clean and rebuild:
    ```bash
    .\gradlew.bat clean
    .\gradlew.bat genSources
    .\gradlew.bat build
    ```
-4. Clean VS Code workspace: Run "Java: Clean the Java language server workspace" from Command Palette (Ctrl+Shift+P)
+5. Clean VS Code workspace: Run "Java: Clean the Java language server workspace" from Command Palette (Ctrl+Shift+P)

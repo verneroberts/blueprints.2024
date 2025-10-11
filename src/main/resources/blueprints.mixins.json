@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "vernando.blueprints.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "refmap": "blueprints.refmap.json",
+  "mixins": [],
+  "client": [
+    "WorldRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

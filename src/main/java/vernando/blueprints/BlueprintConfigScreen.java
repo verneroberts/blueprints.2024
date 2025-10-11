@@ -12,6 +12,7 @@ import java.util.ArrayList;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import org.lwjgl.glfw.GLFW;
 
 @Environment(EnvType.CLIENT)
 public class BlueprintConfigScreen extends Screen {
@@ -49,11 +50,7 @@ public class BlueprintConfigScreen extends Screen {
 	}
 	@Override
 	protected void init() {
-		System.out.println("BlueprintConfigScreen.init() called");
-		System.out.println("Screen dimensions: " + this.width + "x" + this.height);
-		
 		int width = client.getWindow().getScaledWidth();
-		System.out.println("Window scaled width: " + width);
 
 		// make sure the blueprint is visible if we are here
 		if (!blueprint.isVisible()) {
@@ -165,34 +162,39 @@ public class BlueprintConfigScreen extends Screen {
 						.build());
 	}	
 		@Override
-	public void render(DrawContext context, int mouseX, int mouseY, float delta) {		
+	public void render(DrawContext context, int mouseX, int mouseY, float delta) {
 	    super.render(context, mouseX, mouseY, delta);
-		// Text labels are now handled by TextWidget instances, no manual rendering needed
 	}
 
 	@Override
 	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
-
-		// work out which input box is being scrolled over and adjust the value accordingly
 		for (NumberFieldWidget input : inputBoxes) {
 			if (input.isHovered()) {
+				MinecraftClient client = MinecraftClient.getInstance();
+				boolean shift = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS ||
+					          GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
+				boolean ctrl = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
+					         GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
 				if (verticalAmount > 0) {
-					input.increment(Screen.hasShiftDown(), Screen.hasControlDown());
+					input.increment(shift, ctrl);
 				} else {
-					input.decrement(Screen.hasShiftDown(), Screen.hasControlDown());
+					input.decrement(shift, ctrl);
 				}				
 				return true;
 			}
 		}
-
-		// special case for scale - if the mouse is over the label, adjust both values
 		if (mouseX > c0x && mouseX < c0x + columnWidth && mouseY > row(6) && mouseY < row(6) + rowHeight) {
 			for (NumberFieldWidget input : inputBoxes) {
 				if (input == inputBoxes.get(6) || input == inputBoxes.get(7)) {
+					MinecraftClient client = MinecraftClient.getInstance();
+					boolean shift = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS ||
+						          GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
+					boolean ctrl = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
+						         GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
 					if (verticalAmount > 0) {
-						input.increment(Screen.hasShiftDown(), Screen.hasControlDown());
+						input.increment(shift, ctrl);
 					} else {
-						input.decrement(Screen.hasShiftDown(), Screen.hasControlDown());
+						input.decrement(shift, ctrl);
 					}
 				}
 			}
