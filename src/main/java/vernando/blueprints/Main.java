@@ -3,8 +3,9 @@ package vernando.blueprints;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
+import net.minecraft.util.Identifier;
 
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -27,9 +28,10 @@ public class Main implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("Launch Config", GLFW.GLFW_KEY_O, MOD_NAME));
-		keyPull = KeyBindingHelper.registerKeyBinding(new KeyBinding("Pull", GLFW.GLFW_KEY_MINUS, MOD_NAME));
-		keyPush = KeyBindingHelper.registerKeyBinding(new KeyBinding("Push", GLFW.GLFW_KEY_EQUAL, MOD_NAME));
+		KeyBinding.Category category = KeyBinding.Category.create(Identifier.of(MOD_ID, "blueprints"));
+		keyLaunchConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.blueprints.launch_config", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_O, category));
+		keyPull = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.blueprints.pull", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_MINUS, category));
+		keyPush = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.blueprints.push", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_EQUAL, category));
 
 		Settings.LoadSettings();
 		
@@ -80,21 +82,10 @@ public class Main implements ModInitializer {
 				return;
 			}
 
-		});		WorldRenderEvents.END.register(context -> {
-			if (visible) {
-				BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
-				
-				// Create a temporary sorted copy for rendering (furthest to closest)
-				blueprintManager.blueprints.stream()
-					.sorted((a, b) -> {
-						double distanceA = a.getDistanceFromCamera(context.camera());
-						double distanceB = b.getDistanceFromCamera(context.camera());
-						return Double.compare(distanceB, distanceA); // Furthest first
-					})
-					.forEach(blueprint -> blueprint.render(context, Settings.getRenderThroughBlocks(), true));
-				
-				BlueprintsHud.getInstance().render(context);
-			}
 		});
-	}	
+	}
+
+	public static boolean isVisible() {
+		return visible;
+	}
 }

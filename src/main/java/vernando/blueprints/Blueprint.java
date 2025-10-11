@@ -1,6 +1,5 @@
 package vernando.blueprints;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
@@ -215,7 +214,7 @@ public class Blueprint {
 		}
 	}
 
-	public void render(WorldRenderContext context, Boolean renderThroughBlocks, Boolean renderBothSides) {
+	public void render(MatrixStack matrices, Camera camera, Boolean renderThroughBlocks, Boolean renderBothSides) {
 		if (texture == null || !visibility) {
 			return;
 		}
@@ -224,8 +223,6 @@ public class Blueprint {
 
 		// Update animation frame if this is an animated GIF
 		updateAnimation();
-
-		Camera camera = context.camera();
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
 		Vec3d transformedPosition = targetPosition.subtract(camera.getPos());
 

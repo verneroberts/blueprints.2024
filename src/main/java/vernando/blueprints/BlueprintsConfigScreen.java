@@ -4,8 +4,10 @@ import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 
@@ -21,9 +23,6 @@ public class BlueprintsConfigScreen extends Screen {
   private int imageHeight = 100;
   private int pageOffset = 0;
   private int rowsPerPage = 3;
-  @SuppressWarnings("unused")
-  private boolean shiftPressed;
-  private boolean ctrlPressed;
 
   protected BlueprintsConfigScreen(Main main, ArrayList<Blueprint> blueprints) {
     super(Text.literal(Main.MOD_NAME + " Config"));
@@ -84,6 +83,8 @@ public class BlueprintsConfigScreen extends Screen {
     addDrawableChild(
         ButtonWidget.builder(Text.literal("<"), b -> {
           pageOffset = Math.max(0, pageOffset - 1);
+          // Refresh the screen to update visible buttons
+          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .dimensions(width - 135, height - 25, 20, 20)
             .build());
@@ -91,6 +92,8 @@ public class BlueprintsConfigScreen extends Screen {
     addDrawableChild(
         ButtonWidget.builder(Text.literal(">"), b -> {
           pageOffset = Math.min((blueprints.size() - 1) / imagesPerRow / rowsPerPage, pageOffset + 1);
+          // Refresh the screen to update visible buttons
+          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .dimensions(width - 35, height - 25, 20, 20)
             .build());
@@ -107,10 +110,52 @@ public class BlueprintsConfigScreen extends Screen {
 
           // save config
           Settings.setImagesPerRow(imagesPerRow);
+
+          // Refresh the screen to update button positions
+          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .dimensions(width - 250, height - 25, 110, 20)
             .build());
+
+    // Add invisible buttons for each blueprint tile
+    addBlueprintButtons();
+
   }
+
+  private void addBlueprintButtons() {
+    for (Blueprint blueprint : blueprints) {
+      int index = blueprints.indexOf(blueprint);
+      if (!isImageInView(index))
+        continue;
+
+      int[] pos = getImagePostion(index);
+      int x = pos[0];
+      int y = pos[1];
+
+      int buttonWidth = imageWidth - 3;
+      int buttonHeight = imageHeight - 3;
+      int buttonX = x;
+      int buttonY = y;
+      ButtonWidget blueprintButton = ButtonWidget.builder(Text.empty(), button -> {
+        BlueprintsHud.getInstance().setSelectedBlueprint(blueprint);
+
+        MinecraftClient client = MinecraftClient.getInstance();
+        boolean ctrl = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
+                      GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
+
+        if (ctrl) {
+          blueprint.setVisible(!blueprint.isVisible());
+        } else {
+          client.setScreen(new BlueprintConfigScreen(blueprint, this));
+        }
+      })
+      .dimensions(buttonX, buttonY, buttonWidth, buttonHeight)
+      .build();
+
+      addDrawableChild(blueprintButton);
+    }
+  }
+
 
   @Override
   public void render(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -142,7 +187,7 @@ public class BlueprintsConfigScreen extends Screen {
         }
       });
 
-      context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);      // TODO: Temporarily disabled texture drawing due to RenderPipeline issues
+      context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
       context.drawTexture(RenderPipelines.GUI_TEXTURED, Identifier.of(Main.MOD_ID, "icon.png"), width - 45, 10, 0.0f, 0.0f, 30, 30, 30, 30);
 
       // render page number between buttons at the bottom
@@ -173,53 +218,5 @@ public class BlueprintsConfigScreen extends Screen {
     return new int[] { x, y };
   }
 
-  @Override
-  public boolean mouseClicked(double mouseX, double mouseY, int button) {
-    if (button == 0) {
-      blueprints.forEach((blueprint) -> {
-        int index = blueprints.indexOf(blueprint);
-        if (!isImageInView(index))
-          return;
-        int[] pos = getImagePostion(index);
-        int x = pos[0];
-        int y = pos[1];
 
-        if (mouseX >= x && mouseX <= x + imageWidth && mouseY >= y && mouseY <= y + imageHeight) {
-
-          BlueprintsHud.getInstance().setSelectedBlueprint(blueprint);
-
-          // if ctrl is clicked, the toggle visibility
-          if (ctrlPressed) {
-            blueprint.setVisible(!blueprint.isVisible());
-            return;
-          }
-
-          client.setScreen(new BlueprintConfigScreen(blueprint, this));
-        }
-      });
-    }
-    return super.mouseClicked(mouseX, mouseY, button);
-  }
-
-  @Override
-  public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-    if (keyCode == 340) {
-      shiftPressed = true;
-    }
-    if (keyCode == 341) {
-      ctrlPressed = true;
-    }
-    return super.keyPressed(keyCode, scanCode, modifiers);
-  }
-
-  @Override
-  public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
-    if (keyCode == 340) {
-      shiftPressed = false;
-    }
-    if (keyCode == 341) {
-      ctrlPressed = false;
-    }
-    return super.keyReleased(keyCode, scanCode, modifiers);
-  }
 }
