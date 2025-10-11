@@ -32,11 +32,12 @@ public class MathUtils {
      * @return The normalized yaw in the range [-180, 180]
      */
     public static float normalizeYaw(float yaw) {
-        while (yaw < -180) {
-            yaw += 360;
-        }
-        while (yaw > 180) {
+        // Use modulo for efficiency, then adjust to [-180, 180] range
+        yaw = yaw % 360;
+        if (yaw > 180) {
             yaw -= 360;
+        } else if (yaw < -180) {
+            yaw += 360;
         }
         return yaw;
     }

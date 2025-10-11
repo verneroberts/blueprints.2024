@@ -35,6 +35,10 @@ public class TransformUtils {
      * @return The new position value
      */
     public static float nudgePosition(float currentPosition, Util.Direction direction, float amount, boolean multiply, boolean finetune) {
+        if (direction == null) {
+            return currentPosition;
+        }
+
         float adjustedAmount = MathUtils.calculateNudgeAmount(amount, multiply, finetune, MathUtils.NudgeContext.POSITION);
 
         // Apply direction-specific sign
@@ -78,6 +82,10 @@ public class TransformUtils {
      * @return The new position
      */
     public static Position nudgePosition3D(Position current, Util.Direction direction, float amount, boolean multiply, boolean finetune) {
+        if (current == null || direction == null) {
+            return current;
+        }
+
         float adjustedAmount = MathUtils.calculateNudgeAmount(amount, multiply, finetune, MathUtils.NudgeContext.POSITION);
 
         float newX = current.x;
@@ -164,6 +172,10 @@ public class TransformUtils {
      * @return The new rotation with the specified axis updated and normalized
      */
     public static Rotation nudgeRotation3D(Rotation current, Axis axis, float amount, boolean multiply, boolean finetune) {
+        if (current == null || axis == null) {
+            return current;
+        }
+
         float newX = current.x;
         float newY = current.y;
         float newZ = current.z;
@@ -207,6 +219,10 @@ public class TransformUtils {
      * @return The new scale with the specified axis updated
      */
     public static Scale nudgeScale2D(Scale current, Axis axis, float amount, boolean multiply, boolean finetune) {
+        if (current == null || axis == null) {
+            return current;
+        }
+
         float newX = current.x;
         float newY = current.y;
 

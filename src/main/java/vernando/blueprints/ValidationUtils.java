@@ -113,7 +113,7 @@ public class ValidationUtils {
     public static Set<String> getSupportedExtensions() {
         Set<String> allExtensions = new HashSet<>(SUPPORTED_IMAGE_EXTENSIONS);
         allExtensions.addAll(ADDITIONAL_VARIANTS);
-        return allExtensions;
+        return java.util.Collections.unmodifiableSet(allExtensions);
     }
 
     /**

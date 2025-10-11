@@ -67,14 +67,9 @@ public class BlueprintsManager {
      * Check if a file is a supported image format
      */
     public static boolean isImageFile(String filename) {
-        // Use ValidationUtils for static checking, then check dynamic formats
-        if (ValidationUtils.isImageFile(filename)) {
-            return true;
-        }
-
-        // Check against dynamically detected formats
-        Set<String> dynamicFormats = getDynamicallySupportedFormats();
-        return ValidationUtils.isImageFile(filename, dynamicFormats);
+        // ValidationUtils.isImageFile already checks static formats first,
+        // then falls back to dynamic formats if provided
+        return ValidationUtils.isImageFile(filename, getDynamicallySupportedFormats());
     }
 
     public ArrayList<Blueprint> ScanFileSystemForImages() {

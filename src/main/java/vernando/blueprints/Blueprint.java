@@ -356,7 +356,7 @@ public class Blueprint {
 				height);
 	}
 
-	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {
+	public void NudgeRotation(Axis axis, float amount, boolean multiply, boolean finetune) {
 		TransformUtils.Rotation current = new TransformUtils.Rotation(rotationX, rotationY, rotationZ);
 		TransformUtils.Rotation newRotation = TransformUtils.nudgeRotation3D(current, axis, amount, multiply, finetune);
 
@@ -365,8 +365,8 @@ public class Blueprint {
 		rotationZ = newRotation.z;
 	}
 
-	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, Boolean multiply,
-			Boolean finetune) {
+	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, boolean multiply,
+			boolean finetune) {
 		TransformUtils.Position current = new TransformUtils.Position(positionX, positionY, positionZ);
 		TransformUtils.Position newPosition = TransformUtils.nudgePosition3D(current, direction, amount, multiply, finetune);
 
@@ -375,7 +375,7 @@ public class Blueprint {
 		positionZ = newPosition.z;
 	}
 
-	public void NudgeAlpha(float amount, Boolean multiply, Boolean finetune) {
+	public void NudgeAlpha(float amount, boolean multiply, boolean finetune) {
 		alpha = TransformUtils.nudgeAlpha(alpha, amount, multiply, finetune);
 	}
 
@@ -385,7 +385,7 @@ public class Blueprint {
 		positionZ = z;
 	}
 
-	public void NudgeScale(Axis axis, float amount, Boolean multiply, Boolean finetune) {
+	public void NudgeScale(Axis axis, float amount, boolean multiply, boolean finetune) {
 		TransformUtils.Scale current = new TransformUtils.Scale(scaleX, scaleY);
 		TransformUtils.Scale newScale = TransformUtils.nudgeScale2D(current, axis, amount, multiply, finetune);
 
