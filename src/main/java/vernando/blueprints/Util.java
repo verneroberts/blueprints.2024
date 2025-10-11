@@ -50,13 +50,7 @@ public class Util {
 	private static float fixYaw(float yaw) {
 		// no idea why, but yaw seems to just grow when the player spins in the same
 		// direction
-		while (yaw < -180) {
-			yaw += 360;
-		}
-		while (yaw > 180) {
-			yaw -= 360;
-		}
-		return yaw;
+		return MathUtils.normalizeYaw(yaw);
 	}
 
 	public static Direction PlayerFacingDirection(Boolean usePitch) {

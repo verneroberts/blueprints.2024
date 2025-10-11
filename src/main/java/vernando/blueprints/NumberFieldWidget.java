@@ -62,54 +62,25 @@ public class NumberFieldWidget extends TextFieldWidget {
     }
     
     public NumberFieldWidget setValue(float value) {
-        value = Math.round(value * Math.pow(10, precision)) / (float)Math.pow(10, precision);
-
-        if (maxValue != null && value > maxValue) {
-            value = maxValue;
-        }
-
-        if (minValue != null && value < minValue) {
-            value = minValue;
-        }
+        value = MathUtils.roundToPrecision(value, precision);
+        value = MathUtils.clamp(value, minValue, maxValue);
 
         this.value = value;
-        this.setText(String.valueOf(value));   
+        this.setText(String.valueOf(value));
         this.setCursorToStart(false);
-        this.changedListener.accept(this.value);     
+        this.changedListener.accept(this.value);
         return this;
     }
     
     public NumberFieldWidget increment(boolean shift, boolean ctrl) {
-        float x = standardDelta;
-        if (shift && ctrl) {
-            x *= 100;
-        } else {
-            if (shift) {
-                x *= 10;
-            }
-            if (ctrl) {
-                x *= 0.1;
-            }
-        }
-
-        this.setValue(this.value + x);
+        float delta = MathUtils.calculateFieldDelta(standardDelta, shift, ctrl);
+        this.setValue(this.value + delta);
         return this;
     }
 
     public NumberFieldWidget decrement(boolean shift, boolean ctrl) {
-        float x = standardDelta;
-        if (shift && ctrl) {
-            x *= 100;
-        } else {
-            if (shift) {
-                x *= 10;
-            }
-            if (ctrl) {
-                x *= 0.1;
-            }
-        }
-
-        this.setValue(this.value - x);
+        float delta = MathUtils.calculateFieldDelta(standardDelta, shift, ctrl);
+        this.setValue(this.value - delta);
         return this;
     }
 

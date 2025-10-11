@@ -44,3 +44,14 @@ remappedSrc/
 
 # claude code settings
 .claude/settings.local.json
+
+# test reports and coverage
+.jacoco/
+*.exec
+build/reports/
+build/test-results/
+build/jacoco/
+
+# runtime files
+config/
+logs/

@@ -357,90 +357,26 @@ public class Blueprint {
 	}
 
 	public void NudgeRotation(Axis axis, float amount, Boolean multiply, Boolean finetune) {
-		if (finetune && multiply) {
-			amount *= 180;
-		} else if (finetune) {
-			amount /= 10;
-		} else if (multiply) {
-			amount *= 90;
-		}
-		switch (axis) {
-			case X:
-				rotationX += amount;
-				if (rotationX > 360) {
-					rotationX -= 360;
-				}
-				if (rotationX < 0) {
-					rotationX += 360;
-				}
-				break;
-			case Y:
-				rotationY += amount;
-				if (rotationY > 360) {
-					rotationY -= 360;
-				}
-				if (rotationY < 0) {
-					rotationY += 360;
-				}
-				break;
-			case Z:
-				rotationZ += amount;
-				if (rotationZ > 360) {
-					rotationZ -= 360;
-				}
-				if (rotationZ < 0) {
-					rotationZ += 360;
-				}
-				break;
-		}
+		TransformUtils.Rotation current = new TransformUtils.Rotation(rotationX, rotationY, rotationZ);
+		TransformUtils.Rotation newRotation = TransformUtils.nudgeRotation3D(current, axis, amount, multiply, finetune);
+
+		rotationX = newRotation.x;
+		rotationY = newRotation.y;
+		rotationZ = newRotation.z;
 	}
 
 	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, Boolean multiply,
 			Boolean finetune) {
-		if (finetune && multiply) {
-			amount *= 100f;
-		} else if (finetune) {
-			amount /= 10f;
-		} else if (multiply) {
-			amount *= 10;
-		}
-		switch (direction) {
-			case UP:
-				positionY += amount;
-				break;
-			case DOWN:
-				positionY -= amount;
-				break;
-			case EAST:
-				positionX += amount;
-				break;
-			case WEST:
-				positionX -= amount;
-				break;
-			case NORTH:
-				positionZ -= amount;
-				break;
-			case SOUTH:
-				positionZ += amount;
-				break;
-		}
+		TransformUtils.Position current = new TransformUtils.Position(positionX, positionY, positionZ);
+		TransformUtils.Position newPosition = TransformUtils.nudgePosition3D(current, direction, amount, multiply, finetune);
+
+		positionX = newPosition.x;
+		positionY = newPosition.y;
+		positionZ = newPosition.z;
 	}
 
 	public void NudgeAlpha(float amount, Boolean multiply, Boolean finetune) {
-		if (finetune && multiply) {
-			amount *= 100f;
-		} else if (finetune) {
-			amount /= 10f;
-		} else if (multiply) {
-			amount *= 10;
-		}
-		alpha += amount;
-		if (alpha > 1) {
-			alpha = 1;
-		}
-		if (alpha < 0) {
-			alpha = 0;
-		}
+		alpha = TransformUtils.nudgeAlpha(alpha, amount, multiply, finetune);
 	}
 
 	public void SetPosition(float x, float y, float z) {
@@ -450,28 +386,15 @@ public class Blueprint {
 	}
 
 	public void NudgeScale(Axis axis, float amount, Boolean multiply, Boolean finetune) {
-		if (finetune && multiply) {
-			amount *= 100f;
-		} else if (finetune) {
-			amount /= 10f;
-		} else if (multiply) {
-			amount *= 10;
-		}
-		switch (axis) {
-			case X:
-				scaleX += amount;
-				break;
-			case Y:
-				scaleY += amount;
-				break;
-			case Z:
-				// not implemented
-				break;
-		}
+		TransformUtils.Scale current = new TransformUtils.Scale(scaleX, scaleY);
+		TransformUtils.Scale newScale = TransformUtils.nudgeScale2D(current, axis, amount, multiply, finetune);
+
+		scaleX = newScale.x;
+		scaleY = newScale.y;
 	}
 
 	public String getName() {
-		return texturePath.split("/")[texturePath.split("/").length - 1];
+		return MathUtils.getFilenameFromPath(texturePath);
 	}
 
 	public void ToggleVisibility() {
