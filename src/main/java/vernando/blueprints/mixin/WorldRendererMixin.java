@@ -20,7 +20,7 @@ import vernando.blueprints.Settings;
 @Mixin(WorldRenderer.class)
 public class WorldRendererMixin {
 
-    @Inject(at = @At("TAIL"), method = "render(Lnet/minecraft/client/util/ObjectAllocator;Lnet/minecraft/client/render/RenderTickCounter;ZLnet/minecraft/client/render/Camera;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lorg/joml/Matrix4f;Lcom/mojang/blaze3d/buffers/GpuBufferSlice;Lorg/joml/Vector4f;Z)V")
+    @Inject(at = @At("TAIL"), method = "render")
     private void onRender(ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline, Camera camera, Matrix4f matrix1, Matrix4f matrix2, Matrix4f matrix3, GpuBufferSlice bufferSlice, Vector4f vector, boolean bool2, CallbackInfo ci) {
         if (vernando.blueprints.Main.isVisible()) {
             BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
