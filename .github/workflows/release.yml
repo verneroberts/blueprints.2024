@@ -1,0 +1,79 @@
+# Build and release JAR files for tagged versions
+# This workflow creates downloadable JAR files attached to GitHub releases
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on version tags like v1.21.10.8
+  workflow_dispatch:  # Allow manual triggering
+
+permissions:
+  contents: write  # Required for creating releases
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate gradle wrapper
+        uses: gradle/wrapper-validation-action@v1
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'microsoft'
+
+      - name: Make gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew build
+
+      - name: Get version from gradle.properties
+        id: get_version
+        run: |
+          VERSION=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
+          echo "mod_version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ steps.get_version.outputs.mod_version }}
+          body: |
+            ## Blueprints Mod ${{ steps.get_version.outputs.mod_version }}
+
+            ### Installation
+            1. Download the JAR file below
+            2. Place it in your `.minecraft/mods` folder
+            3. Ensure you have Fabric Loader ${{ steps.get_version.outputs.loader_version }} or higher installed
+
+            ### Requirements
+            - Minecraft ${{ steps.get_version.outputs.minecraft_version }}
+            - Fabric Loader ${{ steps.get_version.outputs.loader_version }}+
+            - Fabric API ${{ steps.get_version.outputs.fabric_version }}+
+
+            ### Files
+            - `blueprints-${{ steps.get_version.outputs.mod_version }}.jar` - Main mod file
+            - `blueprints-${{ steps.get_version.outputs.mod_version }}-sources.jar` - Source code (for developers)
+          files: |
+            build/libs/*.jar
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: blueprints-${{ steps.get_version.outputs.mod_version }}
+          path: build/libs/*.jar
+          retention-days: 90
