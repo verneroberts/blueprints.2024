@@ -1,5 +1,21 @@
 # Build and release JAR files for tagged versions
 # This workflow creates downloadable JAR files attached to GitHub releases
+# and publishes to Modrinth and CurseForge
+#
+# Setup Instructions:
+# 1. Create accounts on Modrinth (https://modrinth.com) and CurseForge (https://www.curseforge.com)
+# 2. Create projects on both platforms for your mod
+# 3. Get your project IDs:
+#    - Modrinth: Found in project settings or URL (e.g., https://modrinth.com/mod/PROJECT_ID)
+#    - CurseForge: Found in project settings (numeric ID)
+# 4. Generate API tokens:
+#    - Modrinth: Go to User Settings > API Tokens > Create Token (needs "Create versions" permission)
+#    - CurseForge: Go to API Tokens > Generate Token
+# 5. Add tokens to GitHub repository secrets:
+#    - Go to repository Settings > Secrets and variables > Actions
+#    - Add MODRINTH_TOKEN with your Modrinth API token
+#    - Add CURSEFORGE_TOKEN with your CurseForge API token
+# 6. Update the project IDs in this file (lines with YOUR_MODRINTH_PROJECT_ID and YOUR_CURSEFORGE_PROJECT_ID)
 
 name: Release
 
@@ -35,35 +51,58 @@ jobs:
       - name: Build with Gradle
         run: ./gradlew build
 
-      - name: Get version from gradle.properties
-        id: get_version
+      - name: Extract changelog for current version
+        id: changelog
         run: |
-          VERSION=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
-          echo "mod_version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Building version: $VERSION"
+          if [ -f "CHANGELOG.md" ]; then
+            # Extract the latest version's changelog (between first two headings)
+            CHANGELOG=$(sed -n '/^## /,/^## /{/^## [0-9]/d;/^## /d;p;}' CHANGELOG.md | sed '/./,$!d' | head -n -1)
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
+            fi
+          else
+            CHANGELOG="No changelog available for this release."
+          fi
+          # Use heredoc to handle multiline content
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Get version and metadata from gradle.properties
+        id: get_metadata
+        run: |
+          MOD_VERSION=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
+          MINECRAFT_VERSION=$(grep "^minecraft_version=" gradle.properties | cut -d'=' -f2)
+          LOADER_VERSION=$(grep "^loader_version=" gradle.properties | cut -d'=' -f2)
+          FABRIC_VERSION=$(grep "^fabric_version=" gradle.properties | cut -d'=' -f2)
+          echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
+          echo "minecraft_version=$MINECRAFT_VERSION" >> $GITHUB_OUTPUT
+          echo "loader_version=$LOADER_VERSION" >> $GITHUB_OUTPUT
+          echo "fabric_version=$FABRIC_VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $MOD_VERSION for Minecraft $MINECRAFT_VERSION"
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ github.ref_name }}
-          name: Release ${{ steps.get_version.outputs.mod_version }}
+          name: Release ${{ steps.get_metadata.outputs.mod_version }}
           body: |
-            ## Blueprints Mod ${{ steps.get_version.outputs.mod_version }}
+            ## Blueprints Mod ${{ steps.get_metadata.outputs.mod_version }}
 
             ### Installation
             1. Download the JAR file below
             2. Place it in your `.minecraft/mods` folder
-            3. Ensure you have Fabric Loader ${{ steps.get_version.outputs.loader_version }} or higher installed
+            3. Ensure you have Fabric Loader ${{ steps.get_metadata.outputs.loader_version }} or higher installed
 
             ### Requirements
-            - Minecraft ${{ steps.get_version.outputs.minecraft_version }}
-            - Fabric Loader ${{ steps.get_version.outputs.loader_version }}+
-            - Fabric API ${{ steps.get_version.outputs.fabric_version }}+
+            - Minecraft ${{ steps.get_metadata.outputs.minecraft_version }}
+            - Fabric Loader ${{ steps.get_metadata.outputs.loader_version }}+
+            - Fabric API ${{ steps.get_metadata.outputs.fabric_version }}+
 
             ### Files
-            - `blueprints-${{ steps.get_version.outputs.mod_version }}.jar` - Main mod file
-            - `blueprints-${{ steps.get_version.outputs.mod_version }}-sources.jar` - Source code (for developers)
+            - `blueprints-${{ steps.get_metadata.outputs.mod_version }}.jar` - Main mod file
+            - `blueprints-${{ steps.get_metadata.outputs.mod_version }}-sources.jar` - Source code (for developers)
           files: |
             build/libs/*.jar
           draft: false
@@ -71,9 +110,39 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Publish to Modrinth and CurseForge
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: x9zklasX
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+
+          curseforge-id: 1292304
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+
+          name: Blueprints ${{ steps.get_metadata.outputs.mod_version }}
+          version: ${{ steps.get_metadata.outputs.mod_version }}
+          version-type: release
+
+          changelog: ${{ steps.changelog.outputs.content }}
+
+          loaders: |
+            fabric
+          game-versions: |
+            ${{ steps.get_metadata.outputs.minecraft_version }}
+
+          dependencies: |
+            fabric-api | depends | *
+            fabric-loader | depends | >=${{ steps.get_metadata.outputs.loader_version }}
+
+          java: |
+            21
+
+          files: |
+            build/libs/!(*-@(dev|sources|javadoc)).jar
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: blueprints-${{ steps.get_version.outputs.mod_version }}
+          name: blueprints-${{ steps.get_metadata.outputs.mod_version }}
           path: build/libs/*.jar
           retention-days: 90
