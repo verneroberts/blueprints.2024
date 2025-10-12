@@ -518,4 +518,28 @@ public class Blueprint {
 		Vec3d blueprintPos = new Vec3d(positionX, positionY, positionZ);
 		return cameraPos.distanceTo(blueprintPos);
 	}
+
+	/**
+	 * Get the texture object for this blueprint
+	 * @return The NativeImageBackedTexture
+	 */
+	public NativeImageBackedTexture getTexture() {
+		return texture;
+	}
+
+	/**
+	 * Get the texture width
+	 * @return The width in pixels
+	 */
+	public int getTextureWidth() {
+		return texture != null ? texture.getImage().getWidth() : 0;
+	}
+
+	/**
+	 * Get the texture height
+	 * @return The height in pixels
+	 */
+	public int getTextureHeight() {
+		return texture != null ? texture.getImage().getHeight() : 0;
+	}
 }

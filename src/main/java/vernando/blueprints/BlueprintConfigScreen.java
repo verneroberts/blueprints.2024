@@ -153,6 +153,14 @@ public class BlueprintConfigScreen extends Screen {
 				})
 						.dimensions(c1x, row(9), columnWidth, rowHeight)
 						.build());
+
+		addDrawableChild(
+				ButtonWidget.builder(Text.literal("Calibrate"), b -> {
+					client.setScreen(new BlueprintCalibrationScreen(blueprint, this));
+				})
+						.dimensions(c2x, row(9), columnWidth, rowHeight)
+						.build());
+
 				addDrawableChild(
 				ButtonWidget.builder(Text.literal("Done"), b -> {
 					this.close();
