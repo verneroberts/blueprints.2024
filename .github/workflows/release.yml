@@ -55,8 +55,8 @@ jobs:
         id: changelog
         run: |
           if [ -f "CHANGELOG.md" ]; then
-            # Extract the latest version's changelog (between first two headings)
-            CHANGELOG=$(sed -n '/^## /,/^## /{/^## [0-9]/d;/^## /d;p;}' CHANGELOG.md | sed '/./,$!d' | head -n -1)
+            # Extract everything from first ## heading until the separator line or end of changelog entries
+            CHANGELOG=$(awk '/^## \[/{flag=1} /^---$/{flag=0} flag' CHANGELOG.md | sed 's/^$/\n/g')
             if [ -z "$CHANGELOG" ]; then
               CHANGELOG="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
             fi
