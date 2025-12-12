@@ -1,7 +1,6 @@
 package vernando.blueprints;
 
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
@@ -68,10 +67,6 @@ public class BlueprintCalibrationScreen extends Screen {
         distanceField.setMaxLength(10);
         distanceField.setText("1.0");
         addDrawableChild(distanceField);
-
-        // Calculate responsive button positions
-        int totalButtonWidth = buttonWidth * 3 + padding * 2; // 3 buttons + 2 gaps
-        int availableWidth = width - (fieldWidth + 20); // Space minus field and margins
 
         if (width > 600) {
             // Wide screen: buttons on sides, field in middle
