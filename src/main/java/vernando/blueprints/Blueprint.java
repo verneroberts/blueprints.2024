@@ -5,6 +5,7 @@ import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.render.RenderSetup;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -219,12 +220,16 @@ public class Blueprint {
 			return;
 		}
 
-		RenderLayer renderLayer = RenderLayer.getEntityNoOutline(textureId);
+		// Create RenderLayer using new 1.21.11 RenderPipelines API
+		RenderSetup setup = RenderSetup.builder(RenderPipelines.GUI_TEXTURED)
+			.texture("Sampler0", textureId)
+			.build();
+		RenderLayer renderLayer = RenderLayer.of("blueprint_texture", setup);
 
 		// Update animation frame if this is an animated GIF
 		updateAnimation();
 		Vec3d targetPosition = new Vec3d(positionX, positionY, positionZ);
-		Vec3d transformedPosition = targetPosition.subtract(camera.getPos());
+		Vec3d transformedPosition = targetPosition.subtract(camera.getCameraPos());
 
 		// Create a new matrix stack and properly isolate transformations
 		MatrixStack matrixStack = new MatrixStack();
@@ -281,6 +286,7 @@ public class Blueprint {
 					GL11.glEnable(GL11.GL_CULL_FACE);
 				}
 			}
+
 			var bufferBuilder = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
 			var vertexConsumer = bufferBuilder.getBuffer(renderLayer);
 
@@ -514,7 +520,7 @@ public class Blueprint {
 	 * @return The distance in blocks
 	 */
 	public double getDistanceFromCamera(Camera camera) {
-		Vec3d cameraPos = camera.getPos();
+		Vec3d cameraPos = camera.getCameraPos();
 		Vec3d blueprintPos = new Vec3d(positionX, positionY, positionZ);
 		return cameraPos.distanceTo(blueprintPos);
 	}

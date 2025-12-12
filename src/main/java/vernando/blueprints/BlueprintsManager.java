@@ -1,7 +1,6 @@
 package vernando.blueprints;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import javax.imageio.ImageIO;
@@ -17,34 +16,6 @@ public class BlueprintsManager {
     }
 
     public ArrayList<Blueprint> blueprints;
-    
-    // Comprehensive list of image file extensions
-    private static final Set<String> SUPPORTED_IMAGE_EXTENSIONS = new HashSet<>(Arrays.asList(
-        // Common formats
-        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp",
-        // RAW formats
-        "cr2", "nef", "arw", "dng", "orf", "rw2", "pef", "srw", "raf", "3fr", "fff", "dcr", "kdc", "srf", "mrw", "raw",
-        // Adobe formats
-        "psd", "psb", "ai", "eps",
-        // Vector formats that can be rasterized
-        "svg", "svgz",
-        // Other formats
-        "ico", "cur", "pcx", "ppm", "pbm", "pgm", "pnm", "xbm", "xpm",
-        // Windows formats
-        "emf", "wmf", "dib",
-        // Apple formats
-        "icns", "pict", "pct",
-        // Scientific/Medical formats
-        "dcm", "dicom", "fits", "fts",
-        // Animation formats
-        "apng", "mng",
-        // HDR formats
-        "hdr", "exr", "pfm", "rgbe",
-        // Compressed formats
-        "jp2", "jpx", "j2k", "j2c", "jpc",
-        // Legacy formats
-        "iff", "lbm", "cut", "dds", "ftx", "g3", "hdf", "img", "jbig", "jng", "koala", "msp", "p7", "ras", "sun", "sgi", "targa", "tga", "wbmp", "xif"
-    ));
     
     private static Set<String> dynamicallySupportedFormats = null;
     
