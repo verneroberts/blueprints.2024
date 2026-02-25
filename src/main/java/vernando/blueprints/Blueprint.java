@@ -48,7 +48,7 @@ public class Blueprint {
 				.withBlend(BlendFunction.TRANSLUCENT)
 				.withVertexFormat(VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS)
 				.withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
-				.withLocation("blueprints:pipeline/blueprint_visible")
+				.withLocation(Identifier.of("blueprints", "pipeline/blueprint_visible"))
 				.build();
 		}
 		return BLUEPRINT_VISIBLE_PIPELINE;
