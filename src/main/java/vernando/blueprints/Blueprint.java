@@ -2,12 +2,10 @@ package vernando.blueprints;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gl.UniformType;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderSetup;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -22,10 +20,7 @@ import java.util.List;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
-import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.platform.DepthTestFunction;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -34,25 +29,6 @@ import com.google.gson.stream.JsonReader;
 import java.io.FileReader;
 
 public class Blueprint {
-
-	private static RenderPipeline BLUEPRINT_VISIBLE_PIPELINE = null;
-
-	private static RenderPipeline getBlueprintVisiblePipeline() {
-		if (BLUEPRINT_VISIBLE_PIPELINE == null) {
-			BLUEPRINT_VISIBLE_PIPELINE = RenderPipeline.builder()
-				.withUniform("Transforms", UniformType.UNIFORM_BUFFER)
-				.withUniform("Projection", UniformType.UNIFORM_BUFFER)
-				.withVertexShader("core/position_tex_color")
-				.withFragmentShader("core/position_tex_color")
-				.withSampler("Sampler0")
-				.withBlend(BlendFunction.TRANSLUCENT)
-				.withVertexFormat(VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS)
-				.withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
-				.withLocation(Identifier.of("blueprints", "pipeline/blueprint_visible"))
-				.build();
-		}
-		return BLUEPRINT_VISIBLE_PIPELINE;
-	}
 
 	private NativeImageBackedTexture texture;
 	public Identifier textureId;
@@ -246,9 +222,11 @@ public class Blueprint {
 			return;
 		}
 
-		// Create RenderLayer using new 1.21.11 RenderPipelines API
-		// Use depth-enabled pipeline in "render visible" mode, GUI pipeline in "render through" mode
-		RenderPipeline pipeline = renderThroughBlocks ? RenderPipelines.GUI_TEXTURED : getBlueprintVisiblePipeline();
+		// Create RenderLayer: GUI_TEXTURED (no depth) for render-all mode,
+		// registered BLUEPRINT_WORLD pipeline (depth-enabled) for render-visible mode.
+		RenderPipeline pipeline = (renderThroughBlocks || BlueprintPipelines.BLUEPRINT_WORLD == null)
+			? RenderPipelines.GUI_TEXTURED
+			: BlueprintPipelines.BLUEPRINT_WORLD;
 		RenderSetup setup = RenderSetup.builder(pipeline)
 			.texture("Sampler0", textureId)
 			.build();
