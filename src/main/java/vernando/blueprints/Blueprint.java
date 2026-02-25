@@ -2,10 +2,12 @@ package vernando.blueprints;
 
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gl.RenderPipelines;
+import net.minecraft.client.gl.UniformType;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderSetup;
+import net.minecraft.client.render.VertexFormats;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -20,6 +22,11 @@ import java.util.List;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
 
+import com.mojang.blaze3d.pipeline.BlendFunction;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.platform.DepthTestFunction;
+import com.mojang.blaze3d.vertex.VertexFormat;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonReader;
@@ -27,6 +34,25 @@ import com.google.gson.stream.JsonReader;
 import java.io.FileReader;
 
 public class Blueprint {
+
+	private static RenderPipeline BLUEPRINT_VISIBLE_PIPELINE = null;
+
+	private static RenderPipeline getBlueprintVisiblePipeline() {
+		if (BLUEPRINT_VISIBLE_PIPELINE == null) {
+			BLUEPRINT_VISIBLE_PIPELINE = RenderPipeline.builder()
+				.withUniform("Transforms", UniformType.UNIFORM_BUFFER)
+				.withUniform("Projection", UniformType.UNIFORM_BUFFER)
+				.withVertexShader("core/position_tex_color")
+				.withFragmentShader("core/position_tex_color")
+				.withSampler("Sampler0")
+				.withBlend(BlendFunction.TRANSLUCENT)
+				.withVertexFormat(VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS)
+				.withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
+				.withLocation("blueprints:pipeline/blueprint_visible")
+				.build();
+		}
+		return BLUEPRINT_VISIBLE_PIPELINE;
+	}
 
 	private NativeImageBackedTexture texture;
 	public Identifier textureId;
@@ -221,7 +247,9 @@ public class Blueprint {
 		}
 
 		// Create RenderLayer using new 1.21.11 RenderPipelines API
-		RenderSetup setup = RenderSetup.builder(RenderPipelines.GUI_TEXTURED)
+		// Use depth-enabled pipeline in "render visible" mode, GUI pipeline in "render through" mode
+		RenderPipeline pipeline = renderThroughBlocks ? RenderPipelines.GUI_TEXTURED : getBlueprintVisiblePipeline();
+		RenderSetup setup = RenderSetup.builder(pipeline)
 			.texture("Sampler0", textureId)
 			.build();
 		RenderLayer renderLayer = RenderLayer.of("blueprint_texture", setup);
@@ -264,17 +292,6 @@ public class Blueprint {
 				GL11.glEnable(GL11.GL_BLEND);
 			}
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-			// Handle depth testing
-			if (renderThroughBlocks) {
-				if (wasDepthTestEnabled) {
-					GL11.glDisable(GL11.GL_DEPTH_TEST);
-				}
-			} else {
-				if (!wasDepthTestEnabled) {
-					GL11.glEnable(GL11.GL_DEPTH_TEST);
-				}
-			}
 
 			// Handle face culling
 			if (renderBothSides) {

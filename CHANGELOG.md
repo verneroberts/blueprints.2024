@@ -2,6 +2,13 @@
 
 All notable changes to the Blueprints mod will be documented in this file.
 
+## [1.21.11.10] - 2026-02-26
+
+### Fixed
+- Images rendering through blocks in "Render visible" mode (issue #24)
+  - Root cause: GUI_TEXTURED pipeline has depth testing baked off; GL11 depth calls were overridden
+  - Fix: use a dedicated depth-enabled pipeline when renderThroughBlocks is false
+
 ## [1.21.10.9] - 2025-10-12
 
 ### Added
