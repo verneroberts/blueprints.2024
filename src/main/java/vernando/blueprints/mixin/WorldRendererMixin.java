@@ -22,21 +22,22 @@ public class WorldRendererMixin {
 
     @Inject(at = @At("TAIL"), method = "render")
     private void onRender(ObjectAllocator allocator, RenderTickCounter tickCounter, boolean renderBlockOutline, Camera camera, Matrix4f matrix1, Matrix4f matrix2, Matrix4f matrix3, GpuBufferSlice bufferSlice, Vector4f vector, boolean bool2, CallbackInfo ci) {
-        if (vernando.blueprints.Main.isVisible()) {
+        // Only handle render-all mode here at TAIL.
+        // Render-visible mode is handled via WorldRenderEvents.AFTER_TRANSLUCENT in Main,
+        // where the world depth buffer is still active.
+        if (vernando.blueprints.Main.isVisible() && Settings.getRenderThroughBlocks()) {
             BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
 
             if (blueprintManager.blueprints != null) {
-                // Create a MatrixStack for rendering (since our Blueprint.render method expects it)
                 MatrixStack matrices = new MatrixStack();
 
-                // Create a temporary sorted copy for rendering (furthest to closest)
                 blueprintManager.blueprints.stream()
                     .sorted((a, b) -> {
                         double distanceA = a.getDistanceFromCamera(camera);
                         double distanceB = b.getDistanceFromCamera(camera);
                         return Double.compare(distanceB, distanceA); // Furthest first
                     })
-                    .forEach(blueprint -> blueprint.render(matrices, camera, Settings.getRenderThroughBlocks(), true));
+                    .forEach(blueprint -> blueprint.render(matrices, camera, true, true));
 
                 BlueprintsHud.getInstance().render(matrices, camera);
             }

@@ -2,6 +2,13 @@
 
 All notable changes to the Blueprints mod will be documented in this file.
 
+## [1.21.11.10] - 2026-02-27
+
+### Fixed
+- Images rendering through blocks in "Render visible" mode (issue #24)
+  - Switched render-visible mode to a direct GPU render pass with explicit DynamicTransforms UBO binding
+  - Registered a custom pipeline (POSITION_TEX_COLOR_SNIPPET base) with depth testing, depth write, and face culling disabled
+
 ## [1.21.10.9] - 2025-10-12
 
 ### Added

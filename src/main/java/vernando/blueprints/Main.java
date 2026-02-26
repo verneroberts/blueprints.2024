@@ -3,8 +3,11 @@ package vernando.blueprints;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.world.WorldRenderEvents;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
+import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 import org.lwjgl.glfw.GLFW;
@@ -34,7 +37,26 @@ public class Main implements ModInitializer {
 		keyPush = KeyBindingHelper.registerKeyBinding(new KeyBinding("key.blueprints.push", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_EQUAL, category));
 
 		Settings.LoadSettings();
-		
+
+		// Render-visible mode: fires during the translucent pass while the world depth buffer is active.
+		// Uses direct GPU render pass (renderWorld) so that DynamicTransforms UBO is correctly bound.
+		WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
+			if (!isVisible() || Settings.getRenderThroughBlocks()) return;
+
+			BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
+			if (blueprintManager.blueprints == null) return;
+
+			var camera = MinecraftClient.getInstance().gameRenderer.getCamera();
+
+			blueprintManager.blueprints.stream()
+				.sorted((a, b) -> Double.compare(
+					b.getDistanceFromCamera(camera),
+					a.getDistanceFromCamera(camera)))
+				.forEach(blueprint -> blueprint.renderWorld(camera));
+
+			BlueprintsHud.getInstance().render(new MatrixStack(), camera);
+		});
+
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null || client.world == null || client.options == null) {
 				return;

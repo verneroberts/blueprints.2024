@@ -1,11 +1,13 @@
 package vernando.blueprints;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gl.MappableRingBuffer;
 import net.minecraft.client.gl.RenderPipelines;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.client.render.RenderSetup;
+import net.minecraft.client.texture.AbstractTexture;
 import net.minecraft.client.texture.NativeImageBackedTexture;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
@@ -16,9 +18,24 @@ import net.minecraft.util.math.Direction.Axis;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.system.MemoryUtil;
+
+import com.mojang.blaze3d.buffers.GpuBuffer;
+import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.pipeline.RenderPipeline;
+import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import net.minecraft.client.render.BufferBuilder;
+import net.minecraft.client.render.BuiltBuffer;
+import net.minecraft.client.util.BufferAllocator;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -55,6 +72,10 @@ public class Blueprint {
 	private long lastFrameTime;
 	private List<NativeImageBackedTexture> frameTextures;
 	private List<Identifier> frameTextureIds;
+
+	// World-space direct render resources (for depth-tested rendering)
+	private BufferAllocator worldAllocator;
+	private MappableRingBuffer worldVertexBuffer;
 
 	public Blueprint(String filename) {
 		texturePath = filename;
@@ -220,7 +241,7 @@ public class Blueprint {
 			return;
 		}
 
-		// Create RenderLayer using new 1.21.11 RenderPipelines API
+		// render() is used for render-all (through-blocks) mode only — always GUI_TEXTURED (no depth test).
 		RenderSetup setup = RenderSetup.builder(RenderPipelines.GUI_TEXTURED)
 			.texture("Sampler0", textureId)
 			.build();
@@ -264,17 +285,6 @@ public class Blueprint {
 				GL11.glEnable(GL11.GL_BLEND);
 			}
 			GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-
-			// Handle depth testing
-			if (renderThroughBlocks) {
-				if (wasDepthTestEnabled) {
-					GL11.glDisable(GL11.GL_DEPTH_TEST);
-				}
-			} else {
-				if (!wasDepthTestEnabled) {
-					GL11.glEnable(GL11.GL_DEPTH_TEST);
-				}
-			}
 
 			// Handle face culling
 			if (renderBothSides) {
@@ -338,6 +348,111 @@ public class Blueprint {
 
 			// Restore original blend function
 			GL11.glBlendFunc(currentBlendSrc[0], currentBlendDst[0]);
+		}
+	}
+
+	/**
+	 * Render this blueprint in world space with depth testing (render-visible mode).
+	 * Uses a direct GPU render pass so that DynamicTransforms UBO is correctly bound.
+	 */
+	public void renderWorld(Camera camera) {
+		if (texture == null || !visibility || BlueprintPipelines.BLUEPRINT_WORLD == null) {
+			return;
+		}
+
+		updateAnimation();
+
+		RenderPipeline pipeline = BlueprintPipelines.BLUEPRINT_WORLD;
+		VertexFormat vertexFormat = pipeline.getVertexFormat();
+		VertexFormat.DrawMode drawMode = pipeline.getVertexFormatMode();
+
+		// Blueprint model matrix: camera-origin translation + local rotations.
+		Vec3d cam = camera.getCameraPos();
+		MatrixStack ms = new MatrixStack();
+		ms.translate((float)(positionX - cam.x), (float)(positionY - cam.y), (float)(positionZ - cam.z));
+		ms.multiply(RotationAxis.POSITIVE_X.rotationDegrees(rotationX));
+		ms.multiply(RotationAxis.POSITIVE_Y.rotationDegrees(rotationY));
+		ms.multiply(RotationAxis.POSITIVE_Z.rotationDegrees(rotationZ));
+		Matrix4f modelMatrix = new Matrix4f(ms.peek().getPositionMatrix());
+
+		// Full model-view = current view matrix × blueprint model matrix.
+		// Vertices submitted in local space; shader applies this full transform.
+		Matrix4f modelViewMatrix = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(modelMatrix);
+
+		// Build vertex buffer (local quad coords, not pre-transformed by model matrix).
+		int vertexSize = vertexFormat.getVertexSize();
+		if (worldAllocator == null) {
+			worldAllocator = new BufferAllocator(vertexSize * 4 + 64);
+		}
+
+		BufferBuilder buffer = new BufferBuilder(worldAllocator, drawMode, vertexFormat);
+		buffer.vertex(-scaleX, -scaleY / aspectRatio, 0).texture(0f, 1f).color(1f, 1f, 1f, alpha);
+		buffer.vertex( scaleX, -scaleY / aspectRatio, 0).texture(1f, 1f).color(1f, 1f, 1f, alpha);
+		buffer.vertex( scaleX,  scaleY / aspectRatio, 0).texture(1f, 0f).color(1f, 1f, 1f, alpha);
+		buffer.vertex(-scaleX,  scaleY / aspectRatio, 0).texture(0f, 0f).color(1f, 1f, 1f, alpha);
+
+		BuiltBuffer builtBuffer = buffer.end();
+		BuiltBuffer.DrawParameters drawParams = builtBuffer.getDrawParameters();
+
+		// Upload vertex data to a ring buffer (3 buffers to avoid CPU/GPU sync stalls).
+		int bufSize = drawParams.vertexCount() * vertexSize;
+		if (worldVertexBuffer == null || worldVertexBuffer.size() < bufSize) {
+			if (worldVertexBuffer != null) worldVertexBuffer.close();
+			worldVertexBuffer = new MappableRingBuffer(
+				() -> "blueprints_world_" + id,
+				GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
+				bufSize
+			);
+		}
+
+		GpuBuffer gpuBuf = worldVertexBuffer.getBlocking();
+		try (GpuBuffer.MappedView mappedView = RenderSystem.getDevice().createCommandEncoder()
+				.mapBuffer(gpuBuf, false, true)) {
+			MemoryUtil.memCopy(builtBuffer.getBuffer(), mappedView.data());
+		}
+
+		// Sequential index buffer works for both QUADS and other draw modes.
+		RenderSystem.ShapeIndexBuffer seqBuf = RenderSystem.getSequentialBuffer(drawMode);
+		GpuBuffer indices = seqBuf.getIndexBuffer(drawParams.indexCount());
+		VertexFormat.IndexType indexType = seqBuf.getIndexType();
+
+		// Write DynamicTransforms UBO (model-view matrix + identity texture transform).
+		GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
+			.write(modelViewMatrix, new Vector4f(1f, 1f, 1f, 1f), new Vector3f(), new Matrix4f());
+
+		// Get GPU texture view and sampler from the registered texture.
+		AbstractTexture tex = MinecraftClient.getInstance().getTextureManager().getTexture(textureId);
+
+		// Execute render pass against the main framebuffer (world depth buffer is attached here).
+		MinecraftClient client = MinecraftClient.getInstance();
+		try (RenderPass rp = RenderSystem.getDevice().createCommandEncoder()
+				.createRenderPass(
+					() -> "blueprint_world_render",
+					client.getFramebuffer().getColorAttachmentView(),
+					OptionalInt.empty(),
+					client.getFramebuffer().getDepthAttachmentView(),
+					OptionalDouble.empty())) {
+			rp.setPipeline(pipeline);
+			RenderSystem.bindDefaultUniforms(rp);
+			rp.setUniform("DynamicTransforms", dynamicTransforms);
+			rp.bindTexture("Sampler0", tex.getGlTextureView(), tex.getSampler());
+			rp.setVertexBuffer(0, gpuBuf);
+			rp.setIndexBuffer(indices, indexType);
+			rp.drawIndexed(0, 0, drawParams.indexCount(), 1);
+		}
+
+		builtBuffer.close();
+		worldVertexBuffer.rotate();
+	}
+
+	public void closeWorldResources() {
+		if (worldVertexBuffer != null) {
+			worldVertexBuffer.close();
+			worldVertexBuffer = null;
+		}
+		if (worldAllocator != null) {
+			worldAllocator.close();
+			worldAllocator = null;
 		}
 	}
 

@@ -6,6 +6,7 @@
   "refmap": "blueprints.refmap.json",
   "mixins": [],
   "client": [
+    "RenderPipelinesMixin",
     "WorldRendererMixin"
   ],
   "injectors": {
