@@ -38,25 +38,23 @@ public class Main implements ModInitializer {
 
 		Settings.LoadSettings();
 
-		// Render-visible mode: inject at BEFORE_TRANSLUCENT where the world depth buffer is active.
+		// Render-visible mode: fires during the translucent pass while the world depth buffer is active.
+		// Uses direct GPU render pass (renderWorld) so that DynamicTransforms UBO is correctly bound.
 		WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
 			if (!isVisible() || Settings.getRenderThroughBlocks()) return;
-
-			LOGGER.info("[Blueprints] BEFORE_TRANSLUCENT fired, pipeline null={}", BlueprintPipelines.BLUEPRINT_WORLD == null);
 
 			BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
 			if (blueprintManager.blueprints == null) return;
 
 			var camera = MinecraftClient.getInstance().gameRenderer.getCamera();
-			MatrixStack matrices = new MatrixStack();
 
 			blueprintManager.blueprints.stream()
 				.sorted((a, b) -> Double.compare(
 					b.getDistanceFromCamera(camera),
 					a.getDistanceFromCamera(camera)))
-				.forEach(blueprint -> blueprint.render(matrices, camera, false, true));
+				.forEach(blueprint -> blueprint.renderWorld(camera));
 
-			BlueprintsHud.getInstance().render(matrices, camera);
+			BlueprintsHud.getInstance().render(new MatrixStack(), camera);
 		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {

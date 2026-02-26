@@ -9,11 +9,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import com.mojang.blaze3d.pipeline.BlendFunction;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import com.mojang.blaze3d.platform.DepthTestFunction;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gl.UniformType;
-import net.minecraft.client.render.VertexFormats;
 import net.minecraft.util.Identifier;
 
 import org.slf4j.LoggerFactory;
@@ -31,16 +28,11 @@ public class RenderPipelinesMixin {
     private static void onStaticInit(CallbackInfo ci) {
         LoggerFactory.getLogger("blueprints").info("[Blueprints] Registering BLUEPRINT_WORLD pipeline");
         BlueprintPipelines.BLUEPRINT_WORLD = register(
-            RenderPipeline.builder()
-                .withUniform("Transforms", UniformType.UNIFORM_BUFFER)
-                .withUniform("Projection", UniformType.UNIFORM_BUFFER)
-                .withVertexShader("core/position_tex_color")
-                .withFragmentShader("core/position_tex_color")
-                .withSampler("Sampler0")
-                .withBlend(BlendFunction.TRANSLUCENT)
-                .withVertexFormat(VertexFormats.POSITION_TEXTURE_COLOR, VertexFormat.DrawMode.QUADS)
+            RenderPipeline.builder(RenderPipelines.POSITION_TEX_COLOR_SNIPPET)
                 .withDepthTestFunction(DepthTestFunction.LEQUAL_DEPTH_TEST)
-                .withDepthWrite(false)
+                .withDepthWrite(true)
+                .withCull(false)
+                .withBlend(BlendFunction.TRANSLUCENT)
                 .withLocation(Identifier.of("blueprints", "pipeline/blueprint_visible"))
                 .build()
         );
