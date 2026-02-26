@@ -42,6 +42,8 @@ public class Main implements ModInitializer {
 		WorldRenderEvents.BEFORE_TRANSLUCENT.register(context -> {
 			if (!isVisible() || Settings.getRenderThroughBlocks()) return;
 
+			LOGGER.info("[Blueprints] BEFORE_TRANSLUCENT fired, pipeline null={}", BlueprintPipelines.BLUEPRINT_WORLD == null);
+
 			BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
 			if (blueprintManager.blueprints == null) return;
 

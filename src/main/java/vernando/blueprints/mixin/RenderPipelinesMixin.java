@@ -16,6 +16,7 @@ import net.minecraft.client.gl.UniformType;
 import net.minecraft.client.render.VertexFormats;
 import net.minecraft.util.Identifier;
 
+import org.slf4j.LoggerFactory;
 import vernando.blueprints.BlueprintPipelines;
 
 @Mixin(RenderPipelines.class)
@@ -28,6 +29,7 @@ public class RenderPipelinesMixin {
 
     @Inject(at = @At("TAIL"), method = "<clinit>")
     private static void onStaticInit(CallbackInfo ci) {
+        LoggerFactory.getLogger("blueprints").info("[Blueprints] Registering BLUEPRINT_WORLD pipeline");
         BlueprintPipelines.BLUEPRINT_WORLD = register(
             RenderPipeline.builder()
                 .withUniform("Transforms", UniformType.UNIFORM_BUFFER)

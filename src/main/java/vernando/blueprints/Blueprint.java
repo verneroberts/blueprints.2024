@@ -227,6 +227,8 @@ public class Blueprint {
 		RenderPipeline pipeline = (renderThroughBlocks || BlueprintPipelines.BLUEPRINT_WORLD == null)
 			? RenderPipelines.GUI_TEXTURED
 			: BlueprintPipelines.BLUEPRINT_WORLD;
+
+		Main.LOGGER.info("[Blueprints] render() throughBlocks={} pipeline={}", renderThroughBlocks, pipeline.getLocation());
 		RenderSetup setup = RenderSetup.builder(pipeline)
 			.texture("Sampler0", textureId)
 			.build();
