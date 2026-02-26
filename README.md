@@ -72,6 +72,15 @@ This mod follows a versioning scheme of `{minecraft_version}.{mod_version}`:
 
 This ensures the mod version continues across Minecraft updates while maintaining compatibility information.
 
+### Release Tagging
+
+Each published release is tagged in git as `v{mod_version}` (e.g. `v1.21.11.10`). These tags are immutable snapshots of what was shipped to Modrinth. When preparing a release, tag main after the version bump:
+
+```bash
+git tag v1.21.11.10
+git push origin v1.21.11.10
+```
+
 ---
 
 ## Development
@@ -134,7 +143,7 @@ When updating the mod:
    - `gradle.properties`
    - `gradle/wrapper/gradle-wrapper.properties`
    - `src/main/resources/fabric.mod.json`
-3. **Important**: When updating to a new Minecraft version, keep the existing mod version number. For example, if updating from `1.21.8.7` to Minecraft 1.21.9, the new version should be `1.21.9.7`.
+3. **Important**: When updating to a new Minecraft version, keep the existing mod version number. For example, if updating from `1.21.8.7` to Minecraft 1.21.9, the new version should be `1.21.9.7`. Tag the release after publishing (see Release Tagging above).
 4. Clean and rebuild:
    ```bash
    .\gradlew.bat clean
