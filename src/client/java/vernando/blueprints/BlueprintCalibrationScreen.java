@@ -1,16 +1,15 @@
 package vernando.blueprints;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-import net.minecraft.util.math.MathHelper;
-
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
 @Environment(EnvType.CLIENT)
@@ -37,7 +36,7 @@ public class BlueprintCalibrationScreen extends Screen {
     private float panY = 0.0f;
 
     // Input field for block distance
-    private TextFieldWidget distanceField;
+    private EditBox distanceField;
 
     // UI constants
     private static final int POINT_RADIUS = 8;
@@ -47,7 +46,7 @@ public class BlueprintCalibrationScreen extends Screen {
     private static final float ZOOM_SPEED = 0.1f;
 
     protected BlueprintCalibrationScreen(Blueprint blueprint, Screen parent) {
-        super(Text.literal("Calibrate: " + blueprint.getName()));
+        super(Component.literal("Calibrate: " + blueprint.getName()));
         this.blueprint = blueprint;
         this.parent = parent;
     }
@@ -61,18 +60,18 @@ public class BlueprintCalibrationScreen extends Screen {
         // Distance input field with label - responsive sizing
         int fieldWidth = Math.min(120, width / 4);
         int fieldX = width / 2 - fieldWidth / 2;
-        distanceField = new TextFieldWidget(textRenderer,
-            fieldX, height - 35, fieldWidth, 20, Text.literal("Distance in blocks"));
-        distanceField.setPlaceholder(Text.literal("Enter blocks"));
+        distanceField = new EditBox(font,
+            fieldX, height - 35, fieldWidth, 20, Component.literal("Distance in blocks"));
+        distanceField.setHint(Component.literal("Enter blocks"));
         distanceField.setMaxLength(10);
-        distanceField.setText("1.0");
-        addDrawableChild(distanceField);
+        distanceField.setValue("1.0");
+        addRenderableWidget(distanceField);
 
         if (width > 600) {
             // Wide screen: buttons on sides, field in middle
             // Reset on left
-            addDrawableChild(
-                ButtonWidget.builder(Text.literal("Reset"), b -> {
+            addRenderableWidget(
+                Button.builder(Component.literal("Reset"), b -> {
                     point1X = null;
                     point1Y = null;
                     point2X = null;
@@ -82,24 +81,24 @@ public class BlueprintCalibrationScreen extends Screen {
                     panX = 0.0f;
                     panY = 0.0f;
                 })
-                .dimensions(padding, height - 35, buttonWidth, buttonHeight)
+                .bounds(padding, height - 35, buttonWidth, buttonHeight)
                 .build());
 
             // Cancel to the right of field
             int cancelX = fieldX + fieldWidth + 10;
-            addDrawableChild(
-                ButtonWidget.builder(Text.literal("Cancel"), b -> {
-                    this.close();
+            addRenderableWidget(
+                Button.builder(Component.literal("Cancel"), b -> {
+                    this.onClose();
                 })
-                .dimensions(cancelX, height - 35, buttonWidth, buttonHeight)
+                .bounds(cancelX, height - 35, buttonWidth, buttonHeight)
                 .build());
 
             // Apply on right
-            addDrawableChild(
-                ButtonWidget.builder(Text.literal("Apply"), b -> {
+            addRenderableWidget(
+                Button.builder(Component.literal("Apply"), b -> {
                     applyCalibration();
                 })
-                .dimensions(width - buttonWidth - padding, height - 35, buttonWidth, buttonHeight)
+                .bounds(width - buttonWidth - padding, height - 35, buttonWidth, buttonHeight)
                 .build());
         } else {
             // Narrow screen: stack buttons vertically or use smaller buttons
@@ -108,8 +107,8 @@ public class BlueprintCalibrationScreen extends Screen {
             int row2Y = height - 35;
 
             // Reset button
-            addDrawableChild(
-                ButtonWidget.builder(Text.literal("Reset"), b -> {
+            addRenderableWidget(
+                Button.builder(Component.literal("Reset"), b -> {
                     point1X = null;
                     point1Y = null;
                     point2X = null;
@@ -119,23 +118,23 @@ public class BlueprintCalibrationScreen extends Screen {
                     panX = 0.0f;
                     panY = 0.0f;
                 })
-                .dimensions(padding, row1Y, smallButtonWidth, buttonHeight)
+                .bounds(padding, row1Y, smallButtonWidth, buttonHeight)
                 .build());
 
             // Cancel button
-            addDrawableChild(
-                ButtonWidget.builder(Text.literal("Cancel"), b -> {
-                    this.close();
+            addRenderableWidget(
+                Button.builder(Component.literal("Cancel"), b -> {
+                    this.onClose();
                 })
-                .dimensions(padding + smallButtonWidth + padding, row1Y, smallButtonWidth, buttonHeight)
+                .bounds(padding + smallButtonWidth + padding, row1Y, smallButtonWidth, buttonHeight)
                 .build());
 
             // Apply button
-            addDrawableChild(
-                ButtonWidget.builder(Text.literal("Apply"), b -> {
+            addRenderableWidget(
+                Button.builder(Component.literal("Apply"), b -> {
                     applyCalibration();
                 })
-                .dimensions(padding + 2 * (smallButtonWidth + padding), row1Y, smallButtonWidth, buttonHeight)
+                .bounds(padding + 2 * (smallButtonWidth + padding), row1Y, smallButtonWidth, buttonHeight)
                 .build());
 
             // Adjust field position for narrow screens
@@ -144,14 +143,14 @@ public class BlueprintCalibrationScreen extends Screen {
     }
 
     @Override
-    public void close() {
-        client.setScreen(parent);
+    public void onClose() {
+        minecraft.setScreen(parent);
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
         // Draw background
-        renderBackground(context, mouseX, mouseY, delta);
+        extractBackground(context, mouseX, mouseY, delta);
 
         // Handle mouse input
         handleMouseInput(mouseX, mouseY);
@@ -180,7 +179,7 @@ public class BlueprintCalibrationScreen extends Screen {
 
         // Draw the blueprint image
         if (blueprint.textureId != null) {
-            context.drawTexture(RenderPipelines.GUI_TEXTURED, blueprint.textureId,
+            context.blit(RenderPipelines.GUI_TEXTURED, blueprint.textureId,
                 imageX, imageY, 0, 0, scaledWidth, scaledHeight, scaledWidth, scaledHeight);
         }
 
@@ -207,18 +206,18 @@ public class BlueprintCalibrationScreen extends Screen {
             double pixelDistance = Math.sqrt(
                 Math.pow(screenPoint2X - screenPoint1X, 2) + Math.pow(screenPoint2Y - screenPoint1Y, 2));
             String distanceText = String.format("Distance: %.1f pixels", pixelDistance);
-            context.drawTextWithShadow(textRenderer, distanceText, 10, 30, 0xFFFFFF);
+            context.text(font, distanceText, 10, 30, 0xFFFFFF);
         }
 
         // Draw instructions at the top
         int instructionY = 10;
-        context.drawTextWithShadow(textRenderer, "Instructions:", 10, instructionY, 0xFFFFFF00); // Yellow
+        context.text(font, "Instructions:", 10, instructionY, 0xFFFFFF00); // Yellow
         instructionY += 12;
-        context.drawTextWithShadow(textRenderer, "1. Scroll to zoom, middle-click and drag to pan", 10, instructionY, 0xFFAAAAAA);
+        context.text(font, "1. Scroll to zoom, middle-click and drag to pan", 10, instructionY, 0xFFAAAAAA);
         instructionY += 10;
-        context.drawTextWithShadow(textRenderer, "2. Click two points on the image with a known distance", 10, instructionY, 0xFFAAAAAA);
+        context.text(font, "2. Click two points on the image with a known distance", 10, instructionY, 0xFFAAAAAA);
         instructionY += 10;
-        context.drawTextWithShadow(textRenderer, "3. Enter the distance in blocks and click Apply", 10, instructionY, 0xFFAAAAAA);
+        context.text(font, "3. Enter the distance in blocks and click Apply", 10, instructionY, 0xFFAAAAAA);
 
         // Draw current step instructions at bottom
         String stepInstructions;
@@ -229,24 +228,24 @@ public class BlueprintCalibrationScreen extends Screen {
         } else {
             stepInstructions = "Drag points to adjust, or enter distance and click Apply";
         }
-        context.drawTextWithShadow(textRenderer, stepInstructions, 10, height - 55, 0xFFFFFFFF);
+        context.text(font, stepInstructions, 10, height - 55, 0xFFFFFFFF);
 
         // Draw distance field label (if there's enough space)
         if (width > 400) {
             String distanceLabel = "Distance (blocks):";
-            int labelX = distanceField.getX() - textRenderer.getWidth(distanceLabel) - 5;
+            int labelX = distanceField.getX() - font.width(distanceLabel) - 5;
             int labelY = distanceField.getY() + 4; // Vertically center with field
             if (labelX > 10) { // Only draw if there's space
-                context.drawTextWithShadow(textRenderer, distanceLabel, labelX, labelY, 0xFFFFFF);
+                context.text(font, distanceLabel, labelX, labelY, 0xFFFFFF);
             }
         }
 
-        super.render(context, mouseX, mouseY, delta);
+        super.extractRenderState(context, mouseX, mouseY, delta);
     }
 
     private void handleMouseInput(int mouseX, int mouseY) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        long windowHandle = client.getWindow().getHandle();
+        Minecraft client = Minecraft.getInstance();
+        long windowHandle = client.getWindow().handle();
         boolean isMousePressed = GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
         boolean isMiddleMousePressed = GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_MIDDLE) == GLFW.GLFW_PRESS;
 
@@ -345,7 +344,7 @@ public class BlueprintCalibrationScreen extends Screen {
         wasMiddleMousePressed = isMiddleMousePressed;
     }
 
-    private void drawCalibrationPoint(DrawContext context, int x, int y, int pointNumber) {
+    private void drawCalibrationPoint(GuiGraphicsExtractor context, int x, int y, int pointNumber) {
         // Draw hollow circle (ring) instead of filled circle
         // Black outer ring
         drawCircleOutline(context, x, y, POINT_RADIUS, 2, 0xFF000000);
@@ -381,13 +380,13 @@ public class BlueprintCalibrationScreen extends Screen {
 
         // Draw point number outside the circle
         String label = String.valueOf(pointNumber);
-        int labelWidth = textRenderer.getWidth(label);
-        int labelY = y - POINT_RADIUS - CROSSHAIR_SIZE - textRenderer.fontHeight - 2;
-        context.drawTextWithShadow(textRenderer, label,
+        int labelWidth = font.width(label);
+        int labelY = y - POINT_RADIUS - CROSSHAIR_SIZE - font.lineHeight - 2;
+        context.text(font, label,
             x - labelWidth / 2, labelY, 0xFFFFFF);
     }
 
-    private void drawCircleOutline(DrawContext context, int cx, int cy, int radius, int thickness, int color) {
+    private void drawCircleOutline(GuiGraphicsExtractor context, int cx, int cy, int radius, int thickness, int color) {
         // Draw a circle outline by drawing a square approximation
         // Top and bottom arcs
         for (int dx = -radius; dx <= radius; dx++) {
@@ -415,7 +414,7 @@ public class BlueprintCalibrationScreen extends Screen {
         }
     }
 
-    private void drawCalibrationLine(DrawContext context, int x1, int y1, int x2, int y2) {
+    private void drawCalibrationLine(GuiGraphicsExtractor context, int x1, int y1, int x2, int y2) {
         // Draw connecting line with black border for visibility on any background
         // Stop at the edge of the circles instead of going through them
         int dx = x2 - x1;
@@ -463,7 +462,7 @@ public class BlueprintCalibrationScreen extends Screen {
         if (mouseY < height - 60) {
             float oldZoom = zoom;
             zoom += (float)verticalAmount * ZOOM_SPEED;
-            zoom = MathHelper.clamp(zoom, MIN_ZOOM, MAX_ZOOM);
+            zoom = Mth.clamp(zoom, MIN_ZOOM, MAX_ZOOM);
 
             // Adjust pan to zoom towards mouse position
             float zoomFactor = zoom / oldZoom;
@@ -490,7 +489,7 @@ public class BlueprintCalibrationScreen extends Screen {
             return;
         }
 
-        String distanceText = distanceField.getText();
+        String distanceText = distanceField.getValue();
         if (distanceText == null || distanceText.trim().isEmpty()) {
             return;
         }
@@ -536,7 +535,7 @@ public class BlueprintCalibrationScreen extends Screen {
             blueprint.setScaleY(newScaleY);
             blueprint.SaveConfig();
 
-            this.close();
+            this.onClose();
         } catch (NumberFormatException e) {
             // Invalid input, do nothing
         }

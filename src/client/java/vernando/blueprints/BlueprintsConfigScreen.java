@@ -1,18 +1,18 @@
 package vernando.blueprints;
 
-import net.minecraft.client.gl.RenderPipelines;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 @Environment(EnvType.CLIENT)
 public class BlueprintsConfigScreen extends Screen {
@@ -25,7 +25,7 @@ public class BlueprintsConfigScreen extends Screen {
   private int rowsPerPage = 3;
 
   protected BlueprintsConfigScreen(Main main, ArrayList<Blueprint> blueprints) {
-    super(Text.literal(Main.MOD_NAME + " Config"));
+    super(Component.literal(Main.MOD_NAME + " Config"));
     this.blueprints = blueprints;
     this.main = main;
   }
@@ -38,41 +38,41 @@ public class BlueprintsConfigScreen extends Screen {
     }
 
     // main config section
-    addDrawableChild(
-        ButtonWidget.builder(Text.literal("Reload"), b -> {
-          b.setMessage(Text.literal("..."));
+    addRenderableWidget(
+        Button.builder(Component.literal("Reload"), b -> {
+          b.setMessage(Component.literal("..."));
           blueprints = BlueprintsManager.getInstance().ScanFileSystemForImages();
           // refresh entire screen
-          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
-            .dimensions(10, 10, 60, 20)
+            .bounds(10, 10, 60, 20)
             .build());
 
     // renderThroughBlocks
-    addDrawableChild(
-        ButtonWidget
-            .builder(Text.literal(Settings.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"),
+    addRenderableWidget(
+        Button
+            .builder(Component.literal(Settings.getRenderThroughBlocks() ? "Mode: Render all" : "Mode: Render visible"),
                 b -> {
                   Settings.setRenderThroughBlocks(!Settings.getRenderThroughBlocks());
-                  b.setMessage(Settings.getRenderThroughBlocks() ? Text.literal("Mode: Render all")
-                      : Text.literal("Mode: Render visible"));
-                  client.setScreen(new BlueprintsConfigScreen(main, blueprints));
+                  b.setMessage(Settings.getRenderThroughBlocks() ? Component.literal("Mode: Render all")
+                      : Component.literal("Mode: Render visible"));
+                  minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
                 })
-            .dimensions(80, 10, 140, 20)
+            .bounds(80, 10, 140, 20)
             .build());
 
-    addDrawableChild(
-    ButtonWidget.builder(Text.literal("Open Folder"), b -> {
+    addRenderableWidget(
+    Button.builder(Component.literal("Open Folder"), b -> {
     Util.OpenFolder(Util.GetPerWorldDimensionConfigPath());
     })
-    .dimensions(width - 200, 10, 80, 20)
+    .bounds(width - 200, 10, 80, 20)
     .build());
 
-    addDrawableChild(
-        ButtonWidget.builder(Text.literal("Close"), b -> {
-          client.setScreen(null);
+    addRenderableWidget(
+        Button.builder(Component.literal("Close"), b -> {
+          minecraft.setScreen(null);
         })
-            .dimensions(width - 100, 10, 50, 20)
+            .bounds(width - 100, 10, 50, 20)
             .build());
 
     imageWidth = (width - 20) / imagesPerRow;
@@ -80,41 +80,41 @@ public class BlueprintsConfigScreen extends Screen {
     rowsPerPage = (height - 50) / imageHeight;
 
     // add page buttons in the bottom right with the page number in the middle
-    addDrawableChild(
-        ButtonWidget.builder(Text.literal("<"), b -> {
+    addRenderableWidget(
+        Button.builder(Component.literal("<"), b -> {
           pageOffset = Math.max(0, pageOffset - 1);
           // Refresh the screen to update visible buttons
-          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
-            .dimensions(width - 135, height - 25, 20, 20)
+            .bounds(width - 135, height - 25, 20, 20)
             .build());
 
-    addDrawableChild(
-        ButtonWidget.builder(Text.literal(">"), b -> {
+    addRenderableWidget(
+        Button.builder(Component.literal(">"), b -> {
           pageOffset = Math.min((blueprints.size() - 1) / imagesPerRow / rowsPerPage, pageOffset + 1);
           // Refresh the screen to update visible buttons
-          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
-            .dimensions(width - 35, height - 25, 20, 20)
+            .bounds(width - 35, height - 25, 20, 20)
             .build());
 
     // add 'images per page' button that cycles between 5, 10, 15, 20
-    addDrawableChild(
-        ButtonWidget.builder(Text.literal("Images per row: " + imagesPerRow), b -> {
+    addRenderableWidget(
+        Button.builder(Component.literal("Images per row: " + imagesPerRow), b -> {
           imagesPerRow = imagesPerRow % 20 + 5;
           imageWidth = (width - 20) / imagesPerRow;
           imageHeight = imageWidth;
           rowsPerPage = (height - 50) / imageHeight;
           pageOffset = 0;
-          b.setMessage(Text.literal("Images per row: " + imagesPerRow));
+          b.setMessage(Component.literal("Images per row: " + imagesPerRow));
 
           // save config
           Settings.setImagesPerRow(imagesPerRow);
 
           // Refresh the screen to update button positions
-          client.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
-            .dimensions(width - 250, height - 25, 110, 20)
+            .bounds(width - 250, height - 25, 110, 20)
             .build());
 
     // Add invisible buttons for each blueprint tile
@@ -136,12 +136,12 @@ public class BlueprintsConfigScreen extends Screen {
       int buttonHeight = imageHeight - 3;
       int buttonX = x;
       int buttonY = y;
-      ButtonWidget blueprintButton = ButtonWidget.builder(Text.empty(), button -> {
+      Button blueprintButton = Button.builder(Component.empty(), button -> {
         BlueprintsHud.getInstance().setSelectedBlueprint(blueprint);
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        boolean ctrl = GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
-                      GLFW.glfwGetKey(client.getWindow().getHandle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
+        Minecraft client = Minecraft.getInstance();
+        boolean ctrl = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
+                      GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
 
         if (ctrl) {
           blueprint.setVisible(!blueprint.isVisible());
@@ -149,17 +149,17 @@ public class BlueprintsConfigScreen extends Screen {
           client.setScreen(new BlueprintConfigScreen(blueprint, this));
         }
       })
-      .dimensions(buttonX, buttonY, buttonWidth, buttonHeight)
+      .bounds(buttonX, buttonY, buttonWidth, buttonHeight)
       .build();
 
-      addDrawableChild(blueprintButton);
+      addRenderableWidget(blueprintButton);
     }
   }
 
 
   @Override
-  public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-    super.render(context, mouseX, mouseY, delta);
+  public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+    super.extractRenderState(context, mouseX, mouseY, delta);
 
     try {
 
@@ -187,12 +187,12 @@ public class BlueprintsConfigScreen extends Screen {
         }
       });
 
-      context.drawTextWithShadow(textRenderer, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
-      context.drawTexture(RenderPipelines.GUI_TEXTURED, Identifier.of(Main.MOD_ID, "icon.png"), width - 45, 10, 0.0f, 0.0f, 30, 30, 30, 30);
+      context.text(font, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
+      context.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath(Main.MOD_ID, "icon.png"), width - 45, 10, 0.0f, 0.0f, 30, 30, 30, 30);
 
       // render page number between buttons at the bottom
       if (rowsPerPage > 0 && imagesPerRow > 0) {
-        context.drawTextWithShadow(textRenderer,
+        context.text(font,
             "Page " + (pageOffset + 1) + " of " + ((blueprints.size() - 1) / imagesPerRow / rowsPerPage + 1),
             width - 110,
             height - 20, 0xffffff);

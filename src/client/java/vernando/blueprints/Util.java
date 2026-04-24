@@ -1,10 +1,6 @@
 package vernando.blueprints;
 
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.texture.NativeImage;
-import net.minecraft.client.texture.NativeImageBackedTexture;
-import net.minecraft.util.Identifier;
-
+import com.mojang.blaze3d.platform.NativeImage;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -19,7 +15,9 @@ import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
 import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.stream.ImageInputStream;
-
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.resources.Identifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,10 +52,10 @@ public class Util {
 	}
 
 	public static Direction PlayerFacingDirection(Boolean usePitch) {
-		MinecraftClient client = MinecraftClient.getInstance();
+		Minecraft client = Minecraft.getInstance();
 
 		if (usePitch) {
-			float pitch = client.getCameraEntity().getPitch();
+			float pitch = client.getCameraEntity().getXRot();
 			if (pitch >= 45) {
 				return Direction.UP;
 			}
@@ -66,7 +64,7 @@ public class Util {
 			}
 		}
 
-		float yaw = client.getCameraEntity().getYaw();
+		float yaw = client.getCameraEntity().getYRot();
 		yaw = fixYaw(yaw);
 		if (yaw > -45 && yaw < 45) {
 			return Direction.SOUTH;
@@ -86,17 +84,17 @@ public class Util {
 
 	public static String getWorldOrServerName() {
 		try {
-			MinecraftClient client = MinecraftClient.getInstance();
-			if (client.isInSingleplayer()) {
-				if (client.getServer() == null) {
+			Minecraft client = Minecraft.getInstance();
+			if (client.isLocalServer()) {
+				if (client.getSingleplayerServer() == null) {
 					return "singleplayer";
 				}
-				if (client.getServer().getSaveProperties() == null) {
+				if (client.getSingleplayerServer().getWorldData() == null) {
 					return "singleplayer";
 				}
-				return client.getServer().getSaveProperties().getLevelName();
+				return client.getSingleplayerServer().getWorldData().getLevelName();
 			} else {
-				return client.getCurrentServerEntry().address;
+				return client.getCurrentServer().ip;
 			}
 		} catch (Exception e) {
 			return "default";
@@ -105,14 +103,14 @@ public class Util {
 
 	public static String getDimensionName() {
 		try {
-			MinecraftClient client = MinecraftClient.getInstance();
-			if (client.world == null) {
+			Minecraft client = Minecraft.getInstance();
+			if (client.level == null) {
 				return "null";
 			}
-			if (client.world.getDimensionEntry() == null) {
+			if (client.level.dimensionTypeRegistration() == null) {
 				return "null";
 			}
-			return client.world.getDimensionEntry().toString().toString().split(":")[2].split("]")[0];
+			return client.level.dimensionTypeRegistration().toString().toString().split(":")[2].split("]")[0];
 		} catch (Exception e) {
 			return "default";
 		}
@@ -139,8 +137,8 @@ public class Util {
 		}
 	}
 
-	public static NativeImageBackedTexture RegisterTexture(String texturePath, Identifier textureId) {
-		MinecraftClient client = MinecraftClient.getInstance();
+	public static DynamicTexture RegisterTexture(String texturePath, Identifier textureId) {
+		Minecraft client = Minecraft.getInstance();
 		try {
 			Main.LOGGER.info("Loading image: " + texturePath + " as " + textureId.toString());
 
@@ -156,9 +154,9 @@ public class Util {
 				Main.LOGGER.error("Failed to load image: " + texturePath);
 				return null;
 			}			
-			NativeImageBackedTexture texture = new NativeImageBackedTexture(() -> texturePath, image);
+			DynamicTexture texture = new DynamicTexture(() -> texturePath, image);
 			Main.LOGGER.info("Registering texture: " + textureId);
-			client.getTextureManager().registerTexture(textureId, texture);
+			client.getTextureManager().register(textureId, texture);
 			return texture;
 		} catch (Exception e) {
 			Main.LOGGER.error("Failed to load image: " + texturePath);
@@ -169,8 +167,8 @@ public class Util {
 
     public static void OpenFolder(String folder) {
 		// create process to launch explorer.exe with this path
-		MinecraftClient client = MinecraftClient.getInstance();
-		String basePath = client.runDirectory.getAbsolutePath();		
+		Minecraft client = Minecraft.getInstance();
+		String basePath = client.gameDirectory.getAbsolutePath();		
 		Path path = Path.of(basePath, folder);
 		String folderPath = path.toString();
 		Main.LOGGER.info("opening folder: " + folderPath);
@@ -440,7 +438,7 @@ public class Util {
 				int g = (rgb >> 8) & 0xFF;
 				int b = rgb & 0xFF;
 				int abgr = (a << 24) | (b << 16) | (g << 8) | r;
-				nativeImage.setColor(x, y, abgr);
+				nativeImage.setPixelABGR(x, y, abgr);
 			}
 		}
 		

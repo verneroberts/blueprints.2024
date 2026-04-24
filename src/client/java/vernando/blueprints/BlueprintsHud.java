@@ -1,10 +1,11 @@
 package vernando.blueprints;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.text.Text;
 import vernando.blueprints.Util.Direction;
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import org.lwjgl.glfw.GLFW;
 
 public class BlueprintsHud {
     private Blueprint selectedBlueprint;
@@ -19,7 +20,7 @@ public class BlueprintsHud {
         return instance;
     }
     
-    public void render(WorldRenderContext context) {     
+    public void render(PoseStack matrices, Camera camera) {
     }
 
     public void setSelectedBlueprint(Blueprint blueprint) {
@@ -48,7 +49,12 @@ public class BlueprintsHud {
             else if (facingDirection == Direction.DOWN)
                 facingDirection = Direction.UP;
 
-            selectedBlueprint.NudgePosition(facingDirection, i, Screen.hasShiftDown(), Screen.hasControlDown());
+            Minecraft client = Minecraft.getInstance();
+            boolean shift = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS ||
+                          GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
+            boolean ctrl = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
+                         GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
+            selectedBlueprint.NudgePosition(facingDirection, i, shift, ctrl);
         }
     }
 
@@ -56,8 +62,8 @@ public class BlueprintsHud {
         if (!isEnabled) {
             isEnabled = true;
             if (selectedBlueprint != null) {
-                MinecraftClient client = MinecraftClient.getInstance();
-                client.inGameHud.setOverlayMessage(Text.literal(selectedBlueprint.getName()), false);            
+                Minecraft client = Minecraft.getInstance();
+                client.gui.setOverlayMessage(Component.literal(selectedBlueprint.getName()), false);            
             }
         }
     }
