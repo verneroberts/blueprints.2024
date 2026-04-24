@@ -115,6 +115,7 @@ jobs:
         with:
           modrinth-id: x9zklasX
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-unfeature-mode: none
 
           curseforge-id: 1292304
           curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
