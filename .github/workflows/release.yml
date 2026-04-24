@@ -39,10 +39,10 @@ jobs:
       - name: Validate gradle wrapper
         uses: gradle/wrapper-validation-action@v1
 
-      - name: Setup JDK 21
+      - name: Setup JDK 25
         uses: actions/setup-java@v4
         with:
-          java-version: 21
+          java-version: 25
           distribution: 'microsoft'
 
       - name: Make gradle wrapper executable
@@ -74,7 +74,7 @@ jobs:
           MOD_VERSION=$(grep "^mod_version=" gradle.properties | cut -d'=' -f2)
           MINECRAFT_VERSION=$(grep "^minecraft_version=" gradle.properties | cut -d'=' -f2)
           LOADER_VERSION=$(grep "^loader_version=" gradle.properties | cut -d'=' -f2)
-          FABRIC_VERSION=$(grep "^fabric_version=" gradle.properties | cut -d'=' -f2)
+          FABRIC_VERSION=$(grep "^fabric_api_version=" gradle.properties | cut -d'=' -f2)
           echo "mod_version=$MOD_VERSION" >> $GITHUB_OUTPUT
           echo "minecraft_version=$MINECRAFT_VERSION" >> $GITHUB_OUTPUT
           echo "loader_version=$LOADER_VERSION" >> $GITHUB_OUTPUT
@@ -135,7 +135,7 @@ jobs:
             fabric-loader | depends | >=${{ steps.get_metadata.outputs.loader_version }}
 
           java: |
-            21
+            25
 
           files: |
             build/libs/!(*-@(dev|sources|javadoc)).jar
