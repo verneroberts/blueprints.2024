@@ -1,6 +1,6 @@
 package vernando.blueprints;
 
-import net.minecraft.util.math.Direction.Axis;
+import net.minecraft.core.Direction.Axis;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;

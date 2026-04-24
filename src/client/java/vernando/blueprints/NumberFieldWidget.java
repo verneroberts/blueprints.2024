@@ -1,13 +1,12 @@
 package vernando.blueprints;
 
 import java.util.function.Consumer;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.network.chat.Component;
 
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.text.Text;
-
-public class NumberFieldWidget extends TextFieldWidget {
+public class NumberFieldWidget extends EditBox {
     private float value;
     private float standardDelta;
     private Consumer<Float> changedListener;
@@ -15,17 +14,17 @@ public class NumberFieldWidget extends TextFieldWidget {
     private Float minValue;
     private int precision=1;
     
-    public NumberFieldWidget(TextRenderer textRenderer, int x, int y, int width, int height, float value, Consumer<Float> changedListener, String tooltip, float standardDelta) {
-        super(textRenderer, x, y, width, height, Text.literal(String.valueOf(value)));
+    public NumberFieldWidget(Font textRenderer, int x, int y, int width, int height, float value, Consumer<Float> changedListener, String tooltip, float standardDelta) {
+        super(textRenderer, x, y, width, height, Component.literal(String.valueOf(value)));
         this.value = value;
         this.standardDelta = standardDelta;
-        this.setTooltip(Tooltip.of(Text.literal(tooltip)));
-        this.setText(String.valueOf(value));   
-        this.setCursorToStart(false);
+        this.setTooltip(Tooltip.create(Component.literal(tooltip)));
+        this.setValue(String.valueOf(value));   
+        this.moveCursorToStart(false);
 
         this.changedListener = changedListener;
 
-        setChangedListener((s) -> {
+        setResponder((s) -> {
             try {
                 float newValue = Float.parseFloat(s);                
                 this.value = newValue;
@@ -37,7 +36,7 @@ public class NumberFieldWidget extends TextFieldWidget {
         });
     }
     
-    public float getValue() {
+    public float getFloatValue() {
         return value;
     }
 
@@ -66,8 +65,8 @@ public class NumberFieldWidget extends TextFieldWidget {
         value = MathUtils.clamp(value, minValue, maxValue);
 
         this.value = value;
-        this.setText(String.valueOf(value));
-        this.setCursorToStart(false);
+        this.setValue(String.valueOf(value));
+        this.moveCursorToStart(false);
         this.changedListener.accept(this.value);
         return this;
     }

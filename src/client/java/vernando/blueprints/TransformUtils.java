@@ -1,6 +1,6 @@
 package vernando.blueprints;
 
-import net.minecraft.util.math.Direction.Axis;
+import net.minecraft.core.Direction.Axis;
 
 /**
  * Pure transformation utilities for blueprint operations.
