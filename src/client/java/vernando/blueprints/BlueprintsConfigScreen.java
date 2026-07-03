@@ -1,11 +1,14 @@
 package vernando.blueprints;
 
+import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
@@ -14,6 +17,10 @@ import net.minecraft.resources.Identifier;
 @Environment(EnvType.CLIENT)
 public class BlueprintsConfigScreen extends Screen {
   private List<Blueprint> blueprints;
+  private List<Blueprint> filteredBlueprints;
+  private final List<Button> tileButtons = new ArrayList<>();
+  private String searchQuery = "";
+  private EditBox searchBox;
   private int imagesPerRow = 5;
   private int imageWidth = 100;
   private int imageHeight = 100;
@@ -72,19 +79,33 @@ public class BlueprintsConfigScreen extends Screen {
     imageHeight = imageWidth;
     rowsPerPage = (height - 50) / imageHeight;
 
+    // search box in the bottom left, filters the grid as you type
+    int searchWidth = Math.max(60, Math.min(140, width - 265));
+    searchBox = new EditBox(font, 10, height - 25, searchWidth, 20, Component.literal("Search"));
+    searchBox.setHint(Component.literal("Search..."));
+    searchBox.setValue(searchQuery);
+    searchBox.setResponder(query -> {
+      if (!query.equals(searchQuery)) {
+        searchQuery = query;
+        pageOffset = 0;
+        refreshBlueprintTiles();
+      }
+    });
+    addRenderableWidget(searchBox);
+
     // add page buttons in the bottom right with the page number in the middle
     addRenderableWidget(
         Button.builder(Component.literal("<"), b -> {
           pageOffset = Math.max(0, pageOffset - 1);
-          rebuildWidgets();
+          refreshBlueprintTiles();
         })
             .bounds(width - 135, height - 25, 20, 20)
             .build());
 
     addRenderableWidget(
         Button.builder(Component.literal(">"), b -> {
-          pageOffset = Math.min(maxPageIndex(), pageOffset + 1);
-          rebuildWidgets();
+          pageOffset = Math.min(maxPageOffset(), pageOffset + 1);
+          refreshBlueprintTiles();
         })
             .bounds(width - 35, height - 25, 20, 20)
             .build());
@@ -100,13 +121,39 @@ public class BlueprintsConfigScreen extends Screen {
             .build());
 
     // Add invisible buttons for each blueprint tile
-    addBlueprintButtons();
+    refreshBlueprintTiles();
 
   }
 
+  /** Recompute the filtered list and rebuild only the blueprint tile buttons. */
+  private void refreshBlueprintTiles() {
+    for (Button button : tileButtons) {
+      removeWidget(button);
+    }
+    tileButtons.clear();
+
+    filteredBlueprints = new ArrayList<>();
+    String query = searchQuery.trim().toLowerCase();
+    for (Blueprint blueprint : blueprints) {
+      if (query.isEmpty() || blueprint.getName().toLowerCase().contains(query)) {
+        filteredBlueprints.add(blueprint);
+      }
+    }
+
+    pageOffset = Math.min(pageOffset, maxPageOffset());
+    addBlueprintButtons();
+  }
+
+  private int maxPageOffset() {
+    if (filteredBlueprints == null || rowsPerPage <= 0 || imagesPerRow <= 0) {
+      return 0;
+    }
+    return Math.max(0, (filteredBlueprints.size() - 1) / imagesPerRow / rowsPerPage);
+  }
+
   private void addBlueprintButtons() {
-    for (int index = 0; index < blueprints.size(); index++) {
-      Blueprint blueprint = blueprints.get(index);
+    for (int index = 0; index < filteredBlueprints.size(); index++) {
+      Blueprint blueprint = filteredBlueprints.get(index);
       if (!isImageInView(index))
         continue;
 
@@ -124,10 +171,19 @@ public class BlueprintsConfigScreen extends Screen {
       .bounds(pos[0], pos[1], imageWidth - 3, imageHeight - 3)
       .build();
 
+      tileButtons.add(blueprintButton);
       addRenderableWidget(blueprintButton);
     }
   }
 
+  @Override
+  public void onFilesDrop(List<Path> paths) {
+    int imported = Util.importImageFiles(paths);
+    if (imported > 0) {
+      blueprints = BlueprintsManager.getInstance().scanFileSystemForImages();
+      rebuildWidgets();
+    }
+  }
 
   @Override
   public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
@@ -136,8 +192,8 @@ public class BlueprintsConfigScreen extends Screen {
     try {
 
       // grid of blueprints
-      for (int index = 0; index < blueprints.size(); index++) {
-        Blueprint blueprint = blueprints.get(index);
+      for (int index = 0; index < filteredBlueprints.size(); index++) {
+        Blueprint blueprint = filteredBlueprints.get(index);
 
         if (!isImageInView(index))
           continue;
@@ -159,24 +215,19 @@ public class BlueprintsConfigScreen extends Screen {
         }
       }
 
-      context.text(font, "Path: " + Util.getPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
+      context.text(font, "Path: " + Util.getPerWorldDimensionConfigPath() + " (drop images here to import)", 10, 35, 0xffffff);
       context.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath(Main.MOD_ID, "icon.png"), width - 45, 10, 0.0f, 0.0f, 30, 30, 30, 30);
 
       // render page number between buttons at the bottom
       if (rowsPerPage > 0 && imagesPerRow > 0) {
         context.text(font,
-            "Page " + (pageOffset + 1) + " of " + (maxPageIndex() + 1),
+            "Page " + (pageOffset + 1) + " of " + (maxPageOffset() + 1),
             width - 110,
             height - 20, 0xffffff);
       }
     } catch (Exception e) {
       Main.LOGGER.error("Failed to render blueprints config screen", e);
     }
-  }
-
-  private int maxPageIndex() {
-    int imagesPerPage = Math.max(1, imagesPerRow * rowsPerPage);
-    return (blueprints.size() - 1) / imagesPerPage;
   }
 
   private boolean isImageInView(int index) {

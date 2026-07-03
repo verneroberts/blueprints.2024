@@ -168,6 +168,63 @@ public class Util {
 		}
 	}
 
+	private static Identifier whiteTextureId;
+
+	/**
+	 * A 1x1 white texture, registered on first use. Lets untextured geometry (grid
+	 * lines) run through the same textured pipeline using plain vertex colors.
+	 */
+	public static Identifier getWhiteTextureId() {
+		if (whiteTextureId == null) {
+			Identifier id = Identifier.fromNamespaceAndPath(Main.MOD_ID, "white_pixel");
+			NativeImage image = new NativeImage(1, 1, false);
+			image.setPixelABGR(0, 0, 0xFFFFFFFF);
+			DynamicTexture texture = new DynamicTexture(() -> "blueprints white pixel", image);
+			Minecraft.getInstance().getTextureManager().register(id, texture);
+			whiteTextureId = id;
+		}
+		return whiteTextureId;
+	}
+
+	/**
+	 * Copy dropped image files into the current world/dimension blueprint folder.
+	 * Existing files are never overwritten; a numeric suffix is added instead.
+	 * @return the number of files imported
+	 */
+	public static int importImageFiles(List<Path> paths) {
+		String targetDir = getPerWorldDimensionConfigPath();
+		int imported = 0;
+		for (Path source : paths) {
+			try {
+				File sourceFile = source.toFile();
+				if (!sourceFile.isFile() || !BlueprintsManager.isImageFile(sourceFile.getName())) {
+					Main.LOGGER.warn("Skipping non-image file: {}", source);
+					continue;
+				}
+				String name = sourceFile.getName();
+				String base = name;
+				String extension = "";
+				int dot = name.lastIndexOf('.');
+				if (dot > 0) {
+					base = name.substring(0, dot);
+					extension = name.substring(dot);
+				}
+				File target = new File(targetDir, name);
+				int suffix = 1;
+				while (target.exists()) {
+					target = new File(targetDir, base + "_" + suffix + extension);
+					suffix++;
+				}
+				java.nio.file.Files.copy(source, target.toPath());
+				Main.LOGGER.info("Imported image: {} -> {}", source, target.getPath());
+				imported++;
+			} catch (Exception e) {
+				Main.LOGGER.error("Failed to import image: {}", source, e);
+			}
+		}
+		return imported;
+	}
+
     public static void openFolder(String folder) {
 		Minecraft client = Minecraft.getInstance();
 		String basePath = client.gameDirectory.getAbsolutePath();

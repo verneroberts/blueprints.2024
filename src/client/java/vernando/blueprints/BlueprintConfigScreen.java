@@ -26,9 +26,18 @@ public class BlueprintConfigScreen extends Screen {
 	int c0x = 5;
 	int c1x = 18;
 	int c2x = c1x + columnWidth + columnPadding;
+	int c3x = c2x + columnWidth + columnPadding * 4;
 
 	private int row(int rowNumber) {
 		return rowNumber * (rowHeight + rowPadding);
+	}
+
+	private String gridModeLabel() {
+		switch (blueprint.getGridMode()) {
+			case 1: return "Grid: Dark";
+			case 2: return "Grid: Light";
+			default: return "Grid: Off";
+		}
 	}
 
 	protected BlueprintConfigScreen(Blueprint blueprint, Screen parent) {
@@ -160,6 +169,39 @@ public class BlueprintConfigScreen extends Screen {
 				})
 						.bounds(c2x, row(9), columnWidth, rowHeight)
 						.build());
+
+		// Display section: mirroring and block grid overlay
+		addRenderableWidget(new StringWidget(c3x + 4, 5 + row(1) + textOffset, this.font.width("Display"), rowHeight, Component.literal("Display"), this.font));
+
+		addRenderableWidget(
+				Button.builder(Component.literal("Flip H: " + (blueprint.isFlippedHorizontally() ? "On" : "Off")), b -> {
+					blueprint.toggleFlipHorizontal();
+					b.setMessage(Component.literal("Flip H: " + (blueprint.isFlippedHorizontally() ? "On" : "Off")));
+				})
+						.bounds(c3x, row(2), columnWidth, rowHeight)
+						.build());
+
+		addRenderableWidget(
+				Button.builder(Component.literal("Flip V: " + (blueprint.isFlippedVertically() ? "On" : "Off")), b -> {
+					blueprint.toggleFlipVertical();
+					b.setMessage(Component.literal("Flip V: " + (blueprint.isFlippedVertically() ? "On" : "Off")));
+				})
+						.bounds(c3x, row(3), columnWidth, rowHeight)
+						.build());
+
+		addRenderableWidget(
+				Button.builder(Component.literal(gridModeLabel()), b -> {
+					blueprint.cycleGridMode();
+					b.setMessage(Component.literal(gridModeLabel()));
+				})
+						.bounds(c3x, row(4), columnWidth, rowHeight)
+						.build());
+
+		NumberFieldWidget gridSpacing = new NumberFieldWidget(font, c3x, row(5), columnWidth, rowHeight,
+				blueprint.getGridSpacing(), (v) -> blueprint.setGridSpacing(v), "Grid spacing (blocks)", 0.5f)
+				.setMinValue(0.1f);
+		inputBoxes.add(gridSpacing);
+		addRenderableWidget(gridSpacing);
 
 				addRenderableWidget(
 				Button.builder(Component.literal("Done"), b -> {

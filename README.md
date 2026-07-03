@@ -9,7 +9,10 @@ A client-side Minecraft mod that allows you to project reference images and sche
 ## Features
 
 - **Image Projection**: Display reference images directly in your Minecraft world
-- **Full Control**: Position, scale, rotate, and adjust transparency of images
+- **Full Control**: Position, scale, rotate, flip/mirror, and adjust transparency of images
+- **Block Grid Overlay**: Project a block-spaced grid over any image to make counting blocks easy
+- **Drag & Drop Import**: Drop image files onto the config screen to import them
+- **Search**: Filter your blueprints by name in the config screen
 - **Per-World Organization**: Images are automatically organized by world and dimension
 - **Selective Visibility**: Only visible when holding an ItemFrame in your main or offhand
 - **Render Options**: Choose to render images behind blocks or always on top
@@ -26,7 +29,7 @@ A client-side Minecraft mod that allows you to project reference images and sche
    ```
    {Minecraft}/config/blueprints/{world name}/{dimension name}
    ```
-3. Add your reference images to the appropriate folder
+3. Add your reference images to the appropriate folder, or simply **drag and drop** image files onto the config screen
 4. Click **Reload** in the config to scan for new images
 
 ### Main Config Screen
@@ -36,8 +39,10 @@ A client-side Minecraft mod that allows you to project reference images and sche
 **Features:**
 - **Reload Button**: Rescans filesystem for newly added images
 - **Path Display**: Shows the folder location for uploading images
+- **Drag & Drop**: Drop image files anywhere on this screen to import them into the current world's folder
 - **Render Mode Toggle**: Choose between "Hide behind blocks" or "Always show"
 - **Blueprint Grid**: Visual selection of available blueprints
+- **Search Box**: Filter blueprints by filename as you type
 - **Hide/Show**: Blueprints with dark overlay are hidden; use Ctrl+Click to toggle
 - **Page Navigation**: Adjust images per page and navigate with chevron buttons
 
@@ -52,6 +57,11 @@ Click on any blueprint to access the positioning screen with these controls:
 - **Shift**: Hold for larger adjustments
 - **Ctrl**: Hold for precise, small adjustments  
 - **Shift + Ctrl**: Hold both for maximum adjustment increments
+
+**Display Controls:**
+- **Flip H / Flip V**: Mirror the image horizontally or vertically (handy for symmetric builds)
+- **Grid**: Overlay grid lines on the image — cycle between Off, Dark, and Light lines
+- **Grid Spacing**: Distance between grid lines in blocks (default 1). Calibrate the image first so image blocks match world blocks, and the grid becomes a true block-counting guide
 
 ## Demo
 

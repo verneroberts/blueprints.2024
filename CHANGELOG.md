@@ -4,6 +4,15 @@ All notable changes to the Blueprints mod will be documented in this file.
 
 ## [26.2.12] - 2026-07-03
 
+### Added
+- Block grid overlay per blueprint: cycle Off / Dark / Light lines, with configurable spacing in blocks (pairs with calibration for block counting)
+- Flip/mirror toggles per blueprint (horizontal and vertical)
+- Drag and drop image files onto the config screen to import them into the current world's blueprint folder
+- Search box in the config screen to filter blueprints by filename
+
+### Fixed
+- Current page no longer resets when clicking buttons on the config screen
+
 ### Changed
 - Upgraded to Minecraft 26.2
 - Updated Fabric Loader to 0.19.3 and Fabric API to 0.154.0+26.2
