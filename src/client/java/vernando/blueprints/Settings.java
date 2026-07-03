@@ -37,7 +37,7 @@ public class Settings  {
 		JsonObject obj = new JsonObject();
 		obj.addProperty("renderThroughBlocks", renderThroughBlocks);
 		obj.addProperty("imagesPerRow", imagesPerRow);
-		String json = obj.toString();
+		String json = new com.google.gson.GsonBuilder().setPrettyPrinting().create().toJson(obj);
 		try {
 			java.nio.file.Files.write(java.nio.file.Paths.get(configPath + "/blueprints.json"), json.getBytes());
 		}  catch (Exception e) {
