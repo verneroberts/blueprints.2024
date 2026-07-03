@@ -1,9 +1,13 @@
 package vernando.blueprints;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.blaze3d.platform.Window;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.nio.file.Path;
@@ -18,13 +22,10 @@ import javax.imageio.stream.ImageInputStream;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.DynamicTexture;
 import net.minecraft.resources.Identifier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class Util {
-	public static final Logger LOGGER = LoggerFactory.getLogger(Main.MOD_ID);
 
-	public static String GetPerWorldDimensionConfigPath() {
+	public static String getPerWorldDimensionConfigPath() {
 		String worldString = getWorldOrServerName();
 		String dimension = getDimensionName();
 		worldString = worldString.replace(":", "_").trim();
@@ -36,7 +37,7 @@ public class Util {
 		return path;
 	}
 
-	public static String GetConfigPath() {
+	public static String getConfigPath() {
 		String path = "config/" + Main.MOD_ID;
 		File folder = new File(path);
 		if (!folder.exists()) {
@@ -51,7 +52,7 @@ public class Util {
 		return MathUtils.normalizeYaw(yaw);
 	}
 
-	public static Direction PlayerFacingDirection(Boolean usePitch) {
+	public static Direction playerFacingDirection(boolean usePitch) {
 		Minecraft client = Minecraft.getInstance();
 
 		if (usePitch) {
@@ -82,6 +83,18 @@ public class Util {
 		NORTH, EAST, SOUTH, WEST, UP, DOWN
 	}
 
+	public static boolean isShiftDown() {
+		Window window = Minecraft.getInstance().getWindow();
+		return InputConstants.isKeyDown(window, InputConstants.KEY_LSHIFT)
+				|| InputConstants.isKeyDown(window, InputConstants.KEY_RSHIFT);
+	}
+
+	public static boolean isCtrlDown() {
+		Window window = Minecraft.getInstance().getWindow();
+		return InputConstants.isKeyDown(window, InputConstants.KEY_LCONTROL)
+				|| InputConstants.isKeyDown(window, InputConstants.KEY_RCONTROL);
+	}
+
 	public static String getWorldOrServerName() {
 		try {
 			Minecraft client = Minecraft.getInstance();
@@ -107,90 +120,75 @@ public class Util {
 			if (client.level == null) {
 				return "null";
 			}
-			if (client.level.dimensionTypeRegistration() == null) {
-				return "null";
-			}
-			return client.level.dimensionTypeRegistration().toString().toString().split(":")[2].split("]")[0];
+			return client.level.dimension().identifier().getPath();
 		} catch (Exception e) {
 			return "default";
 		}
 	}
 
 
-	private static NativeImage LoadAsPng(String texturePath) {
+	private static NativeImage loadAsPng(String texturePath) {
 		try {
-			String format = javax.imageio.ImageIO.getReaderFormatNames()[0];
-			if (!format.equals("png")) {
-				Main.LOGGER.info("Converting image to png: " + texturePath);
-
-				// write to memory and reload as png
-				java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-				javax.imageio.ImageIO.write(javax.imageio.ImageIO.read(new File(texturePath)), "png", baos);
-				return NativeImage.read(new java.io.ByteArrayInputStream(baos.toByteArray()));
-			} else {
-				return NativeImage.read(new FileInputStream(texturePath));
+			// NativeImage can only decode PNG; convert anything else in memory first.
+			if (!texturePath.toLowerCase().endsWith(".png")) {
+				Main.LOGGER.info("Converting image to png: {}", texturePath);
+				BufferedImage image = ImageIO.read(new File(texturePath));
+				if (image == null) {
+					Main.LOGGER.error("No installed image reader can decode: {}", texturePath);
+					return null;
+				}
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ImageIO.write(image, "png", baos);
+				return NativeImage.read(new ByteArrayInputStream(baos.toByteArray()));
+			}
+			try (FileInputStream in = new FileInputStream(texturePath)) {
+				return NativeImage.read(in);
 			}
 		} catch (Exception e) {
-			Main.LOGGER.error("Failed to load image: " + texturePath);
-			Main.LOGGER.error(e.getMessage());
+			Main.LOGGER.error("Failed to load image: {}", texturePath, e);
 			return null;
 		}
 	}
 
-	public static DynamicTexture RegisterTexture(String texturePath, Identifier textureId) {
-		Minecraft client = Minecraft.getInstance();
+	public static DynamicTexture registerTexture(String texturePath, Identifier textureId) {
 		try {
-			Main.LOGGER.info("Loading image: " + texturePath + " as " + textureId.toString());
+			Main.LOGGER.info("Loading image: {} as {}", texturePath, textureId);
 
-			// create an image input stream and convert to png if needed
-			ImageInputStream iis = javax.imageio.ImageIO.createImageInputStream(new File(texturePath));
-			if (iis == null) {
-				Main.LOGGER.error("Failed to load image: " + texturePath);
+			NativeImage image = loadAsPng(texturePath);
+			if (image == null) {
+				Main.LOGGER.error("Failed to load image: {}", texturePath);
 				return null;
 			}
-
-			NativeImage image = LoadAsPng(texturePath);			
-			if (image == null) {
-				Main.LOGGER.error("Failed to load image: " + texturePath);
-				return null;
-			}			
 			DynamicTexture texture = new DynamicTexture(() -> texturePath, image);
-			Main.LOGGER.info("Registering texture: " + textureId);
-			client.getTextureManager().register(textureId, texture);
+			Minecraft.getInstance().getTextureManager().register(textureId, texture);
 			return texture;
 		} catch (Exception e) {
-			Main.LOGGER.error("Failed to load image: " + texturePath);
-			Main.LOGGER.error(e.getMessage());
+			Main.LOGGER.error("Failed to load image: {}", texturePath, e);
 			return null;
 		}
 	}
 
-    public static void OpenFolder(String folder) {
-		// create process to launch explorer.exe with this path
+    public static void openFolder(String folder) {
 		Minecraft client = Minecraft.getInstance();
-		String basePath = client.gameDirectory.getAbsolutePath();		
+		String basePath = client.gameDirectory.getAbsolutePath();
 		Path path = Path.of(basePath, folder);
 		String folderPath = path.toString();
-		Main.LOGGER.info("opening folder: " + folderPath);
+		Main.LOGGER.info("opening folder: {}", folderPath);
 		String os = System.getProperty("os.name").toLowerCase();
-		try {								
-			
+		try {
+
 			if (os.contains("win")) {
-				ProcessBuilder pb = new ProcessBuilder("explorer.exe", folderPath);
-				pb.start();
+				new ProcessBuilder("explorer.exe", folderPath).start();
 			} else if (os.contains("nix") || os.contains("nux")) {
-				ProcessBuilder pb = new ProcessBuilder("xdg-open", folderPath);
-				pb.start();
+				new ProcessBuilder("xdg-open", folderPath).start();
 			} else if (os.contains("mac")) {
-				ProcessBuilder pb = new ProcessBuilder("open", folderPath);
-				pb.start();
+				new ProcessBuilder("open", folderPath).start();
 			} else {
-				Main.LOGGER.error("Unknown OS: " + os);
+				Main.LOGGER.error("Unknown OS: {}", os);
 			}
 
 		} catch (Exception e) {
-			Main.LOGGER.error("Failed to open folder: " + folderPath + " on " + os);
-			Main.LOGGER.error(e.getMessage());
+			Main.LOGGER.error("Failed to open folder: {} on {}", folderPath, os, e);
 		}
     }
 
@@ -198,219 +196,207 @@ public class Util {
 	public static class GifFrame {
 		public NativeImage image;
 		public int delayMs;
-		
+
 		public GifFrame(NativeImage image, int delayMs) {
 			this.image = image;
 			this.delayMs = delayMs;
 		}
 	}
-	
+
 	public static class GifAnimation {
 		public List<GifFrame> frames;
 		public boolean isAnimated;
-		
+
 		public GifAnimation() {
 			this.frames = new ArrayList<>();
 			this.isAnimated = false;
 		}
 	}
 
-	public static boolean IsGifFile(String texturePath) {
+	public static boolean isGifFile(String texturePath) {
 		return texturePath.toLowerCase().endsWith(".gif");
 	}
 
-	public static GifAnimation LoadGif(String texturePath) {
+	public static GifAnimation loadGif(String texturePath) {
 		GifAnimation animation = new GifAnimation();
-		
-		try {
-			File file = new File(texturePath);
-			ImageInputStream iis = ImageIO.createImageInputStream(file);
+		File file = new File(texturePath);
+
+		try (ImageInputStream iis = ImageIO.createImageInputStream(file)) {
 			ImageReader reader = ImageIO.getImageReadersByFormatName("gif").next();
-			reader.setInput(iis, false);
-			
-			int numFrames = reader.getNumImages(true);
-			animation.isAnimated = numFrames > 1;
-			
-			Main.LOGGER.info("Loading GIF with " + numFrames + " frames: " + texturePath);
-			
-			// Get the logical screen size and background color from GIF stream metadata
-			int canvasWidth, canvasHeight;
-			int backgroundColor = 0x00000000; // Default to transparent
-			
 			try {
-				IIOMetadata streamMetadata = reader.getStreamMetadata();
-				if (streamMetadata != null) {
-					String metaFormatName = streamMetadata.getNativeMetadataFormatName();
-					IIOMetadataNode root = (IIOMetadataNode) streamMetadata.getAsTree(metaFormatName);
-					
-					// Get logical screen descriptor
-					IIOMetadataNode screenDescriptor = getNode(root, "LogicalScreenDescriptor");
-					if (screenDescriptor != null) {
-						String widthAttr = screenDescriptor.getAttribute("logicalScreenWidth");
-						String heightAttr = screenDescriptor.getAttribute("logicalScreenHeight");
-						canvasWidth = Integer.parseInt(widthAttr);
-						canvasHeight = Integer.parseInt(heightAttr);
-						
-						// Try to get background color index
-						String bgColorIndex = screenDescriptor.getAttribute("backgroundColorIndex");
-						if (bgColorIndex != null && !bgColorIndex.isEmpty()) {
-							// Note: In a full implementation, you'd use this index with the global color table
-							// For now, we'll keep using transparent background
-						}
-						
-						Main.LOGGER.debug("GIF logical screen size: " + canvasWidth + "x" + canvasHeight);
-					} else {
-						// Fallback to first frame size
-						BufferedImage firstFrame = reader.read(0);
-						canvasWidth = firstFrame.getWidth();
-						canvasHeight = firstFrame.getHeight();
-						Main.LOGGER.warn("Could not read GIF logical screen size, using first frame: " + canvasWidth + "x" + canvasHeight);
-					}
+				reader.setInput(iis, false);
+				readGifFrames(reader, animation, texturePath);
+			} finally {
+				reader.dispose();
+			}
+		} catch (Exception e) {
+			Main.LOGGER.error("Failed to load GIF: {}", texturePath, e);
+
+			// Fallback: try to load as static image
+			NativeImage staticImage = loadAsPng(texturePath);
+			if (staticImage != null) {
+				animation.frames.add(new GifFrame(staticImage, 1000));
+			}
+		}
+
+		return animation;
+	}
+
+	private static void readGifFrames(ImageReader reader, GifAnimation animation, String texturePath) throws Exception {
+		int numFrames = reader.getNumImages(true);
+		animation.isAnimated = numFrames > 1;
+
+		Main.LOGGER.info("Loading GIF with {} frames: {}", numFrames, texturePath);
+
+		// Get the logical screen size and background color from GIF stream metadata
+		int canvasWidth, canvasHeight;
+		int backgroundColor = 0x00000000; // Default to transparent
+
+		try {
+			IIOMetadata streamMetadata = reader.getStreamMetadata();
+			if (streamMetadata != null) {
+				String metaFormatName = streamMetadata.getNativeMetadataFormatName();
+				IIOMetadataNode root = (IIOMetadataNode) streamMetadata.getAsTree(metaFormatName);
+
+				// Get logical screen descriptor
+				IIOMetadataNode screenDescriptor = getNode(root, "LogicalScreenDescriptor");
+				if (screenDescriptor != null) {
+					String widthAttr = screenDescriptor.getAttribute("logicalScreenWidth");
+					String heightAttr = screenDescriptor.getAttribute("logicalScreenHeight");
+					canvasWidth = Integer.parseInt(widthAttr);
+					canvasHeight = Integer.parseInt(heightAttr);
+
+					Main.LOGGER.debug("GIF logical screen size: {}x{}", canvasWidth, canvasHeight);
 				} else {
 					// Fallback to first frame size
 					BufferedImage firstFrame = reader.read(0);
 					canvasWidth = firstFrame.getWidth();
 					canvasHeight = firstFrame.getHeight();
-					Main.LOGGER.warn("No stream metadata available, using first frame size: " + canvasWidth + "x" + canvasHeight);
+					Main.LOGGER.warn("Could not read GIF logical screen size, using first frame: {}x{}", canvasWidth, canvasHeight);
 				}
-			} catch (Exception e) {
+			} else {
 				// Fallback to first frame size
 				BufferedImage firstFrame = reader.read(0);
 				canvasWidth = firstFrame.getWidth();
 				canvasHeight = firstFrame.getHeight();
-				Main.LOGGER.warn("Failed to read GIF logical screen size, using first frame: " + canvasWidth + "x" + canvasHeight + " - " + e.getMessage());
+				Main.LOGGER.warn("No stream metadata available, using first frame size: {}x{}", canvasWidth, canvasHeight);
 			}
-			
-			// Create a canvas to composite frames onto
-			BufferedImage canvas = new BufferedImage(canvasWidth, canvasHeight, BufferedImage.TYPE_INT_ARGB);
-			Graphics2D canvasGraphics = canvas.createGraphics();
-			
-			// Initialize canvas with background color (usually transparent for web GIFs)
-			canvasGraphics.setComposite(AlphaComposite.Src);
-			canvasGraphics.setColor(new java.awt.Color(backgroundColor, true));
-			canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
-			
-			// Track disposal info for the current frame (to be applied after it's shown)
-			String currentDisposalMethod = "none";
-			int currentFrameX = 0, currentFrameY = 0, currentFrameWidth = 0, currentFrameHeight = 0;
-			
-			for (int i = 0; i < numFrames; i++) {
-				BufferedImage frameImage = reader.read(i);
-				
-				// Apply disposal method from the PREVIOUS frame (after it was shown)
-				if (i > 0) {
-					switch (currentDisposalMethod) {
-						case "restoreToBackgroundColor":
-						case "2":
-							// Clear the area where the previous frame was drawn
-							canvasGraphics.setComposite(AlphaComposite.Src);
-							canvasGraphics.setColor(new java.awt.Color(backgroundColor, true));
-							canvasGraphics.fillRect(currentFrameX, currentFrameY, currentFrameWidth, currentFrameHeight);
-							break;
-						case "restoreToPrevious":
-						case "3":
-							// This would require saving the canvas state before drawing the previous frame
-							// For now, treat as "none" but log it
-							Main.LOGGER.debug("Frame " + (i-1) + ": restoreToPrevious disposal not fully implemented, treating as none");
-							break;
-						case "none":
-						case "doNotDispose":
-						case "1":
-						default:
-							// Leave canvas as-is (most common case)
-							break;
-					}
-				}
-				
-				// Get frame metadata for disposal method and positioning
-				IIOMetadata metadata = reader.getImageMetadata(i);
-				String disposalMethod = "none";
-				int frameX = 0, frameY = 0;
-				int delayMs = 100; // Default delay
-				
-				try {
-					String metaFormatName = metadata.getNativeMetadataFormatName();
-					IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(metaFormatName);
-					
-					// Get graphic control extension for disposal method and delay
-					IIOMetadataNode graphicsControlExtensionNode = getNode(root, "GraphicControlExtension");
-					if (graphicsControlExtensionNode != null) {
-						String delayTime = graphicsControlExtensionNode.getAttribute("delayTime");
-						if (delayTime != null && !delayTime.isEmpty()) {
-							delayMs = Integer.parseInt(delayTime) * 10; // Convert from 1/100s to ms
-							if (delayMs < 20) delayMs = 100; // Minimum reasonable delay
-						}
-						
-						String disposal = graphicsControlExtensionNode.getAttribute("disposalMethod");
-						if (disposal != null && !disposal.isEmpty()) {
-							disposalMethod = disposal;
-						}
-					}
-					
-					// Get image descriptor for positioning
-					IIOMetadataNode imageDescriptorNode = getNode(root, "ImageDescriptor");
-					if (imageDescriptorNode != null) {
-						String leftPos = imageDescriptorNode.getAttribute("imageLeft");
-						String topPos = imageDescriptorNode.getAttribute("imageTop");
-						if (leftPos != null && !leftPos.isEmpty()) {
-							frameX = Integer.parseInt(leftPos);
-						}
-						if (topPos != null && !topPos.isEmpty()) {
-							frameY = Integer.parseInt(topPos);
-						}
-					}
-				} catch (Exception e) {
-					Main.LOGGER.warn("Failed to read frame metadata for frame " + i + ", using defaults: " + e.getMessage());
-				}
-				
-				// Draw the current frame onto the canvas at the specified position
-				canvasGraphics.setComposite(AlphaComposite.SrcOver);
-				canvasGraphics.drawImage(frameImage, frameX, frameY, null);
-				
-				// Create a copy of the current canvas state for this frame
-				BufferedImage compositeFrame = new BufferedImage(canvasWidth, canvasHeight, BufferedImage.TYPE_INT_ARGB);
-				Graphics2D frameGraphics = compositeFrame.createGraphics();
-				frameGraphics.setComposite(AlphaComposite.Src);
-				frameGraphics.drawImage(canvas, 0, 0, null);
-				frameGraphics.dispose();
-				
-				// Convert the composite frame to NativeImage
-				NativeImage nativeImage = convertBufferedImageToNativeImage(compositeFrame);
-				animation.frames.add(new GifFrame(nativeImage, delayMs));
-				
-				// Store current frame info for disposal AFTER this frame is shown
-				currentDisposalMethod = disposalMethod;
-				currentFrameX = frameX;
-				currentFrameY = frameY;
-				currentFrameWidth = frameImage.getWidth();
-				currentFrameHeight = frameImage.getHeight();
-				
-				Main.LOGGER.debug("Frame " + i + ": disposal=" + disposalMethod + ", delay=" + delayMs + "ms, pos=(" + frameX + "," + frameY + "), size=(" + frameImage.getWidth() + "x" + frameImage.getHeight() + "), canvas=(" + canvasWidth + "x" + canvasHeight + ")");
-			}
-			
-			canvasGraphics.dispose();
-			reader.dispose();
-			iis.close();
-			
 		} catch (Exception e) {
-			Main.LOGGER.error("Failed to load GIF: " + texturePath);
-			Main.LOGGER.error(e.getMessage());
-			e.printStackTrace();
-			
-			// Fallback: try to load as static image
-			try {
-				NativeImage staticImage = LoadAsPng(texturePath);
-				if (staticImage != null) {
-					animation.frames.add(new GifFrame(staticImage, 1000));
-				}
-			} catch (Exception fallbackEx) {
-				Main.LOGGER.error("Fallback loading also failed: " + fallbackEx.getMessage());
-			}
+			// Fallback to first frame size
+			BufferedImage firstFrame = reader.read(0);
+			canvasWidth = firstFrame.getWidth();
+			canvasHeight = firstFrame.getHeight();
+			Main.LOGGER.warn("Failed to read GIF logical screen size, using first frame: {}x{}", canvasWidth, canvasHeight, e);
 		}
-		
-		return animation;
+
+		// Create a canvas to composite frames onto
+		BufferedImage canvas = new BufferedImage(canvasWidth, canvasHeight, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D canvasGraphics = canvas.createGraphics();
+
+		// Initialize canvas with background color (usually transparent for web GIFs)
+		canvasGraphics.setComposite(AlphaComposite.Src);
+		canvasGraphics.setColor(new java.awt.Color(backgroundColor, true));
+		canvasGraphics.fillRect(0, 0, canvasWidth, canvasHeight);
+
+		// Track disposal info for the current frame (to be applied after it's shown)
+		String currentDisposalMethod = "none";
+		int currentFrameX = 0, currentFrameY = 0, currentFrameWidth = 0, currentFrameHeight = 0;
+
+		for (int i = 0; i < numFrames; i++) {
+			BufferedImage frameImage = reader.read(i);
+
+			// Apply disposal method from the PREVIOUS frame (after it was shown)
+			if (i > 0) {
+				switch (currentDisposalMethod) {
+					case "restoreToBackgroundColor":
+					case "2":
+						// Clear the area where the previous frame was drawn
+						canvasGraphics.setComposite(AlphaComposite.Src);
+						canvasGraphics.setColor(new java.awt.Color(backgroundColor, true));
+						canvasGraphics.fillRect(currentFrameX, currentFrameY, currentFrameWidth, currentFrameHeight);
+						break;
+					case "restoreToPrevious":
+					case "3":
+						// This would require saving the canvas state before drawing the previous frame
+						// For now, treat as "none" but log it
+						Main.LOGGER.debug("Frame {}: restoreToPrevious disposal not fully implemented, treating as none", i - 1);
+						break;
+					case "none":
+					case "doNotDispose":
+					case "1":
+					default:
+						// Leave canvas as-is (most common case)
+						break;
+				}
+			}
+
+			// Get frame metadata for disposal method and positioning
+			IIOMetadata metadata = reader.getImageMetadata(i);
+			String disposalMethod = "none";
+			int frameX = 0, frameY = 0;
+			int delayMs = 100; // Default delay
+
+			try {
+				String metaFormatName = metadata.getNativeMetadataFormatName();
+				IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(metaFormatName);
+
+				// Get graphic control extension for disposal method and delay
+				IIOMetadataNode graphicsControlExtensionNode = getNode(root, "GraphicControlExtension");
+				if (graphicsControlExtensionNode != null) {
+					String delayTime = graphicsControlExtensionNode.getAttribute("delayTime");
+					if (delayTime != null && !delayTime.isEmpty()) {
+						delayMs = Integer.parseInt(delayTime) * 10; // Convert from 1/100s to ms
+						if (delayMs < 20) delayMs = 100; // Minimum reasonable delay
+					}
+
+					String disposal = graphicsControlExtensionNode.getAttribute("disposalMethod");
+					if (disposal != null && !disposal.isEmpty()) {
+						disposalMethod = disposal;
+					}
+				}
+
+				// Get image descriptor for positioning
+				IIOMetadataNode imageDescriptorNode = getNode(root, "ImageDescriptor");
+				if (imageDescriptorNode != null) {
+					String leftPos = imageDescriptorNode.getAttribute("imageLeft");
+					String topPos = imageDescriptorNode.getAttribute("imageTop");
+					if (leftPos != null && !leftPos.isEmpty()) {
+						frameX = Integer.parseInt(leftPos);
+					}
+					if (topPos != null && !topPos.isEmpty()) {
+						frameY = Integer.parseInt(topPos);
+					}
+				}
+			} catch (Exception e) {
+				Main.LOGGER.warn("Failed to read frame metadata for frame {}, using defaults", i, e);
+			}
+
+			// Draw the current frame onto the canvas at the specified position
+			canvasGraphics.setComposite(AlphaComposite.SrcOver);
+			canvasGraphics.drawImage(frameImage, frameX, frameY, null);
+
+			// Create a copy of the current canvas state for this frame
+			BufferedImage compositeFrame = new BufferedImage(canvasWidth, canvasHeight, BufferedImage.TYPE_INT_ARGB);
+			Graphics2D frameGraphics = compositeFrame.createGraphics();
+			frameGraphics.setComposite(AlphaComposite.Src);
+			frameGraphics.drawImage(canvas, 0, 0, null);
+			frameGraphics.dispose();
+
+			// Convert the composite frame to NativeImage
+			NativeImage nativeImage = convertBufferedImageToNativeImage(compositeFrame);
+			animation.frames.add(new GifFrame(nativeImage, delayMs));
+
+			// Store current frame info for disposal AFTER this frame is shown
+			currentDisposalMethod = disposalMethod;
+			currentFrameX = frameX;
+			currentFrameY = frameY;
+			currentFrameWidth = frameImage.getWidth();
+			currentFrameHeight = frameImage.getHeight();
+		}
+
+		canvasGraphics.dispose();
 	}
-	
+
 	private static IIOMetadataNode getNode(IIOMetadataNode rootNode, String nodeName) {
 		int nNodes = rootNode.getLength();
 		for (int i = 0; i < nNodes; i++) {
@@ -422,13 +408,13 @@ public class Util {
 		rootNode.appendChild(node);
 		return node;
 	}
-	
+
 	private static NativeImage convertBufferedImageToNativeImage(BufferedImage bufferedImage) {
 		int width = bufferedImage.getWidth();
 		int height = bufferedImage.getHeight();
-		
+
 		NativeImage nativeImage = new NativeImage(width, height, false);
-		
+
 		for (int x = 0; x < width; x++) {
 			for (int y = 0; y < height; y++) {
 				int rgb = bufferedImage.getRGB(x, y);
@@ -441,7 +427,7 @@ public class Util {
 				nativeImage.setPixelABGR(x, y, abgr);
 			}
 		}
-		
+
 		return nativeImage;
 	}
 }

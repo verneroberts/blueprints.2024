@@ -123,18 +123,18 @@ class SettingsTest {
     }
 
     @Test
-    @DisplayName("LoadSettings should handle missing config file gracefully")
+    @DisplayName("loadSettings should handle missing config file gracefully")
     void testLoadSettings_MissingFile() {
         // This test verifies the method doesn't throw exceptions
         // When
-        assertDoesNotThrow(() -> Settings.LoadSettings());
+        assertDoesNotThrow(() -> Settings.loadSettings());
     }
 
     @Test
-    @DisplayName("SaveSettings should not throw exceptions")
+    @DisplayName("saveSettings should not throw exceptions")
     void testSaveSettings() {
         // This test verifies the method doesn't throw exceptions
         // When
-        assertDoesNotThrow(() -> Settings.SaveSettings());
+        assertDoesNotThrow(() -> Settings.saveSettings());
     }
 }

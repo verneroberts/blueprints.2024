@@ -17,10 +17,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 class UtilTest {
 
     @Test
-    @DisplayName("GetConfigPath should return valid config path")
+    @DisplayName("getConfigPath should return valid config path")
     void testGetConfigPath() {
         // When
-        String path = Util.GetConfigPath();
+        String path = Util.getConfigPath();
 
         // Then
         assertThat(path).isNotNull();
@@ -29,26 +29,26 @@ class UtilTest {
     }
 
     @Test
-    @DisplayName("IsGifFile should return true for .gif extension")
+    @DisplayName("isGifFile should return true for .gif extension")
     void testIsGifFile_WithGifExtension() {
         // Given
         String gifPath = "test/image.gif";
 
         // When
-        boolean result = Util.IsGifFile(gifPath);
+        boolean result = Util.isGifFile(gifPath);
 
         // Then
         assertThat(result).isTrue();
     }
 
     @Test
-    @DisplayName("IsGifFile should return true for .GIF extension (case insensitive)")
+    @DisplayName("isGifFile should return true for .GIF extension (case insensitive)")
     void testIsGifFile_WithUppercaseGifExtension() {
         // Given
         String gifPath = "test/IMAGE.GIF";
 
         // When
-        boolean result = Util.IsGifFile(gifPath);
+        boolean result = Util.isGifFile(gifPath);
 
         // Then
         assertThat(result).isTrue();
@@ -56,10 +56,10 @@ class UtilTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"test.png", "test.jpg", "test.jpeg", "test.bmp", "test"})
-    @DisplayName("IsGifFile should return false for non-gif files")
+    @DisplayName("isGifFile should return false for non-gif files")
     void testIsGifFile_WithNonGifExtension(String filename) {
         // When
-        boolean result = Util.IsGifFile(filename);
+        boolean result = Util.isGifFile(filename);
 
         // Then
         assertThat(result).isFalse();
@@ -92,10 +92,10 @@ class UtilTest {
     }
 
     @Test
-    @DisplayName("GetPerWorldDimensionConfigPath should return valid path")
+    @DisplayName("getPerWorldDimensionConfigPath should return valid path")
     void testGetPerWorldDimensionConfigPath() {
         // When
-        String path = Util.GetPerWorldDimensionConfigPath();
+        String path = Util.getPerWorldDimensionConfigPath();
 
         // Then
         assertThat(path).isNotNull();

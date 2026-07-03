@@ -1,12 +1,9 @@
 package vernando.blueprints;
 
-import org.lwjgl.glfw.GLFW;
-
-import java.util.ArrayList;
+import java.util.List;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -16,18 +13,16 @@ import net.minecraft.resources.Identifier;
 
 @Environment(EnvType.CLIENT)
 public class BlueprintsConfigScreen extends Screen {
-  private ArrayList<Blueprint> blueprints;
-  private Main main;
+  private List<Blueprint> blueprints;
   private int imagesPerRow = 5;
   private int imageWidth = 100;
   private int imageHeight = 100;
   private int pageOffset = 0;
   private int rowsPerPage = 3;
 
-  protected BlueprintsConfigScreen(Main main, ArrayList<Blueprint> blueprints) {
+  protected BlueprintsConfigScreen(List<Blueprint> blueprints) {
     super(Component.literal(Main.MOD_NAME + " Config"));
     this.blueprints = blueprints;
-    this.main = main;
   }
 
   @Override
@@ -40,10 +35,9 @@ public class BlueprintsConfigScreen extends Screen {
     // main config section
     addRenderableWidget(
         Button.builder(Component.literal("Reload"), b -> {
-          b.setMessage(Component.literal("..."));
-          blueprints = BlueprintsManager.getInstance().ScanFileSystemForImages();
-          // refresh entire screen
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          blueprints = BlueprintsManager.getInstance().scanFileSystemForImages();
+          pageOffset = 0;
+          rebuildWidgets();
         })
             .bounds(10, 10, 60, 20)
             .build());
@@ -56,17 +50,16 @@ public class BlueprintsConfigScreen extends Screen {
                   Settings.setRenderThroughBlocks(!Settings.getRenderThroughBlocks());
                   b.setMessage(Settings.getRenderThroughBlocks() ? Component.literal("Mode: Render all")
                       : Component.literal("Mode: Render visible"));
-                  minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
                 })
             .bounds(80, 10, 140, 20)
             .build());
 
     addRenderableWidget(
-    Button.builder(Component.literal("Open Folder"), b -> {
-    Util.OpenFolder(Util.GetPerWorldDimensionConfigPath());
-    })
-    .bounds(width - 200, 10, 80, 20)
-    .build());
+        Button.builder(Component.literal("Open Folder"), b -> {
+          Util.openFolder(Util.getPerWorldDimensionConfigPath());
+        })
+            .bounds(width - 200, 10, 80, 20)
+            .build());
 
     addRenderableWidget(
         Button.builder(Component.literal("Close"), b -> {
@@ -83,36 +76,25 @@ public class BlueprintsConfigScreen extends Screen {
     addRenderableWidget(
         Button.builder(Component.literal("<"), b -> {
           pageOffset = Math.max(0, pageOffset - 1);
-          // Refresh the screen to update visible buttons
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          rebuildWidgets();
         })
             .bounds(width - 135, height - 25, 20, 20)
             .build());
 
     addRenderableWidget(
         Button.builder(Component.literal(">"), b -> {
-          pageOffset = Math.min((blueprints.size() - 1) / imagesPerRow / rowsPerPage, pageOffset + 1);
-          // Refresh the screen to update visible buttons
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          pageOffset = Math.min(maxPageIndex(), pageOffset + 1);
+          rebuildWidgets();
         })
             .bounds(width - 35, height - 25, 20, 20)
             .build());
 
-    // add 'images per page' button that cycles between 5, 10, 15, 20
+    // add 'images per row' button that cycles between 5, 10, 15, 20
     addRenderableWidget(
         Button.builder(Component.literal("Images per row: " + imagesPerRow), b -> {
-          imagesPerRow = imagesPerRow % 20 + 5;
-          imageWidth = (width - 20) / imagesPerRow;
-          imageHeight = imageWidth;
-          rowsPerPage = (height - 50) / imageHeight;
+          Settings.setImagesPerRow(imagesPerRow % 20 + 5);
           pageOffset = 0;
-          b.setMessage(Component.literal("Images per row: " + imagesPerRow));
-
-          // save config
-          Settings.setImagesPerRow(imagesPerRow);
-
-          // Refresh the screen to update button positions
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          rebuildWidgets();
         })
             .bounds(width - 250, height - 25, 110, 20)
             .build());
@@ -123,33 +105,23 @@ public class BlueprintsConfigScreen extends Screen {
   }
 
   private void addBlueprintButtons() {
-    for (Blueprint blueprint : blueprints) {
-      int index = blueprints.indexOf(blueprint);
+    for (int index = 0; index < blueprints.size(); index++) {
+      Blueprint blueprint = blueprints.get(index);
       if (!isImageInView(index))
         continue;
 
-      int[] pos = getImagePostion(index);
-      int x = pos[0];
-      int y = pos[1];
+      int[] pos = getImagePosition(index);
 
-      int buttonWidth = imageWidth - 3;
-      int buttonHeight = imageHeight - 3;
-      int buttonX = x;
-      int buttonY = y;
       Button blueprintButton = Button.builder(Component.empty(), button -> {
         BlueprintsHud.getInstance().setSelectedBlueprint(blueprint);
 
-        Minecraft client = Minecraft.getInstance();
-        boolean ctrl = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
-                      GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
-
-        if (ctrl) {
+        if (Util.isCtrlDown()) {
           blueprint.setVisible(!blueprint.isVisible());
         } else {
-          client.setScreen(new BlueprintConfigScreen(blueprint, this));
+          minecraft.setScreen(new BlueprintConfigScreen(blueprint, this));
         }
       })
-      .bounds(buttonX, buttonY, buttonWidth, buttonHeight)
+      .bounds(pos[0], pos[1], imageWidth - 3, imageHeight - 3)
       .build();
 
       addRenderableWidget(blueprintButton);
@@ -164,12 +136,12 @@ public class BlueprintsConfigScreen extends Screen {
     try {
 
       // grid of blueprints
-      blueprints.forEach((blueprint) -> {
-        int index = blueprints.indexOf(blueprint);
+      for (int index = 0; index < blueprints.size(); index++) {
+        Blueprint blueprint = blueprints.get(index);
 
         if (!isImageInView(index))
-          return;
-        int[] pos = getImagePostion(index);
+          continue;
+        int[] pos = getImagePosition(index);
         int x = pos[0];
         int y = pos[1];
 
@@ -185,33 +157,34 @@ public class BlueprintsConfigScreen extends Screen {
         if (!blueprint.isVisible()) {
           context.fill(x, y, x + imageWidth - 4, y + imageHeight - 4, 0x80000000);
         }
-      });
+      }
 
-      context.text(font, "Path: " + Util.GetPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
+      context.text(font, "Path: " + Util.getPerWorldDimensionConfigPath(), 10, 35, 0xffffff);
       context.blit(RenderPipelines.GUI_TEXTURED, Identifier.fromNamespaceAndPath(Main.MOD_ID, "icon.png"), width - 45, 10, 0.0f, 0.0f, 30, 30, 30, 30);
 
       // render page number between buttons at the bottom
       if (rowsPerPage > 0 && imagesPerRow > 0) {
         context.text(font,
-            "Page " + (pageOffset + 1) + " of " + ((blueprints.size() - 1) / imagesPerRow / rowsPerPage + 1),
+            "Page " + (pageOffset + 1) + " of " + (maxPageIndex() + 1),
             width - 110,
             height - 20, 0xffffff);
       }
     } catch (Exception e) {
-      e.printStackTrace();
-      Main.LOGGER.error(e.getMessage());
+      Main.LOGGER.error("Failed to render blueprints config screen", e);
     }
+  }
+
+  private int maxPageIndex() {
+    int imagesPerPage = Math.max(1, imagesPerRow * rowsPerPage);
+    return (blueprints.size() - 1) / imagesPerPage;
   }
 
   private boolean isImageInView(int index) {
     index -= pageOffset * imagesPerRow * rowsPerPage;
-    if (index < 0 || index >= imagesPerRow * rowsPerPage)
-      return false;
-
-    return true;
+    return index >= 0 && index < imagesPerRow * rowsPerPage;
   }
 
-  private int[] getImagePostion(int index) {
+  private int[] getImagePosition(int index) {
     index -= pageOffset * imagesPerRow * rowsPerPage;
     int x = 10 + (index % imagesPerRow) * imageWidth;
     int y = 50 + (index / imagesPerRow) * imageHeight;

@@ -1,7 +1,5 @@
 package vernando.blueprints;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 
 /**
@@ -10,38 +8,14 @@ import java.util.Set;
  */
 public class ValidationUtils {
 
-    // Comprehensive list of image file extensions
-    private static final Set<String> SUPPORTED_IMAGE_EXTENSIONS = new HashSet<>(Arrays.asList(
-        // Common formats
-        "jpg", "jpeg", "png", "gif", "bmp", "tiff", "tif", "webp",
-        // RAW formats
-        "cr2", "nef", "arw", "dng", "orf", "rw2", "pef", "srw", "raf", "3fr", "fff", "dcr", "kdc", "srf", "mrw", "raw",
-        // Adobe formats
-        "psd", "psb", "ai", "eps",
-        // Vector formats that can be rasterized
-        "svg", "svgz",
-        // Other formats
-        "ico", "cur", "pcx", "ppm", "pbm", "pgm", "pnm", "xbm", "xpm",
-        // Windows formats
-        "emf", "wmf", "dib",
-        // Apple formats
-        "icns", "pict", "pct",
-        // Scientific/Medical formats
-        "dcm", "dicom", "fits", "fts",
-        // Animation formats
-        "apng", "mng",
-        // HDR formats
-        "hdr", "exr", "pfm", "rgbe",
-        // Compressed formats
-        "jp2", "jpx", "j2k", "j2c", "jpc",
-        // Legacy formats
-        "iff", "lbm", "cut", "dds", "ftx", "g3", "hdf", "img", "jbig", "jng", "koala", "msp", "p7", "ras", "sun", "sgi", "targa", "tga", "wbmp", "xif"
-    ));
-
-    // Additional variants not in the main list
-    private static final Set<String> ADDITIONAL_VARIANTS = new HashSet<>(Arrays.asList(
-        "jpe", "jfif" // JPEG variants
-    ));
+    /**
+     * Image file extensions that Java's built-in ImageIO can decode.
+     * Formats supported by additional installed ImageIO plugins are handled
+     * via the dynamic-format overload of {@link #isImageFile(String, Set)}.
+     */
+    private static final Set<String> SUPPORTED_IMAGE_EXTENSIONS = Set.of(
+        "png", "jpg", "jpeg", "jpe", "jfif", "gif", "bmp", "wbmp", "tif", "tiff"
+    );
 
     /**
      * Checks if a filename has a supported image file extension.
@@ -50,16 +24,8 @@ public class ValidationUtils {
      * @return true if the file has a supported image extension, false otherwise
      */
     public static boolean isImageFile(String filename) {
-        if (filename == null || filename.isEmpty()) {
-            return false;
-        }
-
         String extension = getFileExtension(filename);
-        if (extension == null || extension.isEmpty()) {
-            return false;
-        }
-
-        return SUPPORTED_IMAGE_EXTENSIONS.contains(extension) || ADDITIONAL_VARIANTS.contains(extension);
+        return extension != null && SUPPORTED_IMAGE_EXTENSIONS.contains(extension);
     }
 
     /**
@@ -111,9 +77,7 @@ public class ValidationUtils {
      * @return An unmodifiable set of supported extensions
      */
     public static Set<String> getSupportedExtensions() {
-        Set<String> allExtensions = new HashSet<>(SUPPORTED_IMAGE_EXTENSIONS);
-        allExtensions.addAll(ADDITIONAL_VARIANTS);
-        return java.util.Collections.unmodifiableSet(allExtensions);
+        return SUPPORTED_IMAGE_EXTENSIONS;
     }
 
     /**
@@ -127,8 +91,7 @@ public class ValidationUtils {
             return false;
         }
 
-        String lowerExtension = extension.toLowerCase();
-        return SUPPORTED_IMAGE_EXTENSIONS.contains(lowerExtension) || ADDITIONAL_VARIANTS.contains(lowerExtension);
+        return SUPPORTED_IMAGE_EXTENSIONS.contains(extension.toLowerCase());
     }
 
     /**

@@ -2,12 +2,13 @@ package vernando.blueprints;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import javax.imageio.ImageIO;
 
 public class BlueprintsManager {
 
-    public static BlueprintsManager instance;
+    private static BlueprintsManager instance;
     public static BlueprintsManager getInstance() {
         if (instance == null) {
             instance = new BlueprintsManager();
@@ -15,25 +16,28 @@ public class BlueprintsManager {
         return instance;
     }
 
-    public ArrayList<Blueprint> blueprints;
-    
+    private List<Blueprint> blueprints = new ArrayList<>();
+
+    public List<Blueprint> getBlueprints() {
+        return blueprints;
+    }
+
     private static Set<String> dynamicallySupportedFormats = null;
-    
+
     /**
      * Get all image formats supported by the current Java ImageIO installation
      */
     private static Set<String> getDynamicallySupportedFormats() {
         if (dynamicallySupportedFormats == null) {
             dynamicallySupportedFormats = new HashSet<>();
-            String[] readerFormats = ImageIO.getReaderFormatNames();
-            for (String format : readerFormats) {
+            for (String format : ImageIO.getReaderFormatNames()) {
                 dynamicallySupportedFormats.add(format.toLowerCase());
             }
-            Main.LOGGER.info("Dynamically detected image formats: " + String.join(", ", dynamicallySupportedFormats));
+            Main.LOGGER.info("Dynamically detected image formats: {}", String.join(", ", dynamicallySupportedFormats));
         }
         return dynamicallySupportedFormats;
     }
-    
+
     /**
      * Check if a file is a supported image format
      */
@@ -43,40 +47,43 @@ public class BlueprintsManager {
         return ValidationUtils.isImageFile(filename, getDynamicallySupportedFormats());
     }
 
-    public ArrayList<Blueprint> ScanFileSystemForImages() {
-        String fullPath = Util.GetPerWorldDimensionConfigPath();
-        Main.LOGGER.info("Scanning for images in " + fullPath);
-        blueprints = new ArrayList<Blueprint>();
+    public List<Blueprint> scanFileSystemForImages() {
+        String fullPath = Util.getPerWorldDimensionConfigPath();
+        Main.LOGGER.info("Scanning for images in {}", fullPath);
+
+        // Release GPU textures held by the previous scan before dropping it.
+        blueprints.forEach(Blueprint::close);
+        blueprints = new ArrayList<>();
+
         File folder = new File(fullPath);
         File[] listOfFiles = folder.listFiles();
-        
+
         if (listOfFiles == null) {
-            Main.LOGGER.warn("Could not list files in directory: " + fullPath);
+            Main.LOGGER.warn("Could not list files in directory: {}", fullPath);
             return blueprints;
         }
-        
+
         int supportedFiles = 0;
         int totalFiles = 0;
-        
+
         for (File file : listOfFiles) {
             if (file.isFile()) {
                 totalFiles++;
                 String filename = file.getName();
-                
+
                 if (isImageFile(filename)) {
                     try {
-                        Blueprint blueprint = new Blueprint(fullPath + "/" + filename);
-                        blueprints.add(blueprint);
+                        blueprints.add(new Blueprint(fullPath + "/" + filename));
                         supportedFiles++;
-                        Main.LOGGER.debug("Added image file: " + filename);
+                        Main.LOGGER.debug("Added image file: {}", filename);
                     } catch (Exception e) {
-                        Main.LOGGER.error("Failed to load image file: " + filename + " - " + e.getMessage());
+                        Main.LOGGER.error("Failed to load image file: {}", filename, e);
                     }
                 }
             }
         }
-        
-        Main.LOGGER.info("Loaded " + supportedFiles + " image files out of " + totalFiles + " total files in " + fullPath);
+
+        Main.LOGGER.info("Loaded {} image files out of {} total files in {}", supportedFiles, totalFiles, fullPath);
         return blueprints;
     }
 }
