@@ -63,7 +63,9 @@ public class BlueprintsHud {
             isEnabled = true;
             if (selectedBlueprint != null) {
                 Minecraft client = Minecraft.getInstance();
-                client.gui.setOverlayMessage(Component.literal(selectedBlueprint.getName()), false);            
+                if (client.player != null) {
+                    client.player.sendOverlayMessage(Component.literal(selectedBlueprint.getName()));
+                }
             }
         }
     }

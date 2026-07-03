@@ -7,6 +7,7 @@ All notable changes to the Blueprints mod will be documented in this file.
 ### Changed
 - Upgraded to Minecraft 26.2
 - Updated Fabric Loader to 0.19.3 and Fabric API to 0.154.0+26.2
+- Ported to the 26.2 rendering and GUI APIs (PrimitiveTopology, GpuBufferSlice mapping, Gui.setScreen, GameRenderer.mainRenderTarget)
 
 ## [1.21.11.10] - 2026-02-27
 

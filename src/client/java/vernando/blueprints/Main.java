@@ -44,7 +44,7 @@ public class Main implements ModInitializer {
 			BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
 			if (blueprintManager.blueprints == null) return;
 
-			var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+			var camera = Minecraft.getInstance().gameRenderer.mainCamera();
 
 			blueprintManager.blueprints.stream()
 				.sorted((a, b) -> Double.compare(
@@ -62,7 +62,7 @@ public class Main implements ModInitializer {
 			BlueprintsManager blueprintManager = BlueprintsManager.getInstance();
 			if (blueprintManager.blueprints == null) return;
 
-			var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+			var camera = Minecraft.getInstance().gameRenderer.mainCamera();
 
 			blueprintManager.blueprints.stream()
 				.sorted((a, b) -> Double.compare(
@@ -94,7 +94,7 @@ public class Main implements ModInitializer {
 			}
 
 			if (keyLaunchConfig.consumeClick()) {
-				client.setScreen(new BlueprintsConfigScreen(this, blueprintManager.blueprints));
+				client.gui.setScreen(new BlueprintsConfigScreen(this, blueprintManager.blueprints));
 			}
 
 			if (keyPush.consumeClick()) {

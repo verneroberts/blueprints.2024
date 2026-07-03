@@ -43,7 +43,7 @@ public class BlueprintsConfigScreen extends Screen {
           b.setMessage(Component.literal("..."));
           blueprints = BlueprintsManager.getInstance().ScanFileSystemForImages();
           // refresh entire screen
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.gui.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .bounds(10, 10, 60, 20)
             .build());
@@ -56,7 +56,7 @@ public class BlueprintsConfigScreen extends Screen {
                   Settings.setRenderThroughBlocks(!Settings.getRenderThroughBlocks());
                   b.setMessage(Settings.getRenderThroughBlocks() ? Component.literal("Mode: Render all")
                       : Component.literal("Mode: Render visible"));
-                  minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+                  minecraft.gui.setScreen(new BlueprintsConfigScreen(main, blueprints));
                 })
             .bounds(80, 10, 140, 20)
             .build());
@@ -70,7 +70,7 @@ public class BlueprintsConfigScreen extends Screen {
 
     addRenderableWidget(
         Button.builder(Component.literal("Close"), b -> {
-          minecraft.setScreen(null);
+          minecraft.gui.setScreen(null);
         })
             .bounds(width - 100, 10, 50, 20)
             .build());
@@ -84,7 +84,7 @@ public class BlueprintsConfigScreen extends Screen {
         Button.builder(Component.literal("<"), b -> {
           pageOffset = Math.max(0, pageOffset - 1);
           // Refresh the screen to update visible buttons
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.gui.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .bounds(width - 135, height - 25, 20, 20)
             .build());
@@ -93,7 +93,7 @@ public class BlueprintsConfigScreen extends Screen {
         Button.builder(Component.literal(">"), b -> {
           pageOffset = Math.min((blueprints.size() - 1) / imagesPerRow / rowsPerPage, pageOffset + 1);
           // Refresh the screen to update visible buttons
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.gui.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .bounds(width - 35, height - 25, 20, 20)
             .build());
@@ -112,7 +112,7 @@ public class BlueprintsConfigScreen extends Screen {
           Settings.setImagesPerRow(imagesPerRow);
 
           // Refresh the screen to update button positions
-          minecraft.setScreen(new BlueprintsConfigScreen(main, blueprints));
+          minecraft.gui.setScreen(new BlueprintsConfigScreen(main, blueprints));
         })
             .bounds(width - 250, height - 25, 110, 20)
             .build());
@@ -146,7 +146,7 @@ public class BlueprintsConfigScreen extends Screen {
         if (ctrl) {
           blueprint.setVisible(!blueprint.isVisible());
         } else {
-          client.setScreen(new BlueprintConfigScreen(blueprint, this));
+          client.gui.setScreen(new BlueprintConfigScreen(blueprint, this));
         }
       })
       .bounds(buttonX, buttonY, buttonWidth, buttonHeight)
