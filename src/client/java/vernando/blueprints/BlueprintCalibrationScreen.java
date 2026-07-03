@@ -533,7 +533,7 @@ public class BlueprintCalibrationScreen extends Screen {
 
             blueprint.setScaleX(newScaleX);
             blueprint.setScaleY(newScaleY);
-            blueprint.SaveConfig();
+            blueprint.saveConfig();
 
             this.onClose();
         } catch (NumberFormatException e) {

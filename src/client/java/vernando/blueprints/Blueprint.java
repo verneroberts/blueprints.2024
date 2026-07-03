@@ -1,17 +1,22 @@
 package vernando.blueprints;
 
 import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
+import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.MappableRingBuffer;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.DynamicTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Matrix4f;
@@ -31,40 +36,47 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
-import com.google.gson.stream.JsonReader;
-
-import java.io.FileReader;
 
 public class Blueprint {
+
+	private static final AtomicInteger NEXT_ID = new AtomicInteger();
+	private static final Gson GSON = new Gson();
+
+	/**
+	 * The persisted state of a blueprint. Field names double as the JSON keys
+	 * in the per-image .json config file, so renaming a field is a format change.
+	 */
+	private static class Config {
+		float scaleX = 1.0f;
+		float scaleY = 1.0f;
+		float positionX;
+		float positionY;
+		float positionZ;
+		float rotationX;
+		float rotationY;
+		float rotationZ;
+		float alpha = 1.0f;
+		boolean visibility = true;
+	}
 
 	private DynamicTexture texture;
 	public Identifier textureId;
 
-	private String texturePath;
-	private String id;
+	private final String texturePath;
+	private final String id;
+	private final String configFile;
 
-	private float scaleX;
-	private float scaleY;
-	private float positionX;
-	private float positionY;
-	private float positionZ;
-	private float rotationX;
-	private float rotationY;
-	private float rotationZ;
-	private float alpha;
+	private Config config = new Config();
 	private float aspectRatio;
 	public int order;
-	private String configFile;
-	private boolean visibility;
 
 	// GIF animation support
 	private Util.GifAnimation gifAnimation;
 	private boolean isAnimated;
 	private int currentFrame;
 	private long lastFrameTime;
-	private List<DynamicTexture> frameTextures;
-	private List<Identifier> frameTextureIds;
+	private final List<DynamicTexture> frameTextures;
+	private final List<Identifier> frameTextureIds;
 
 	// World-space direct render resources (for depth-tested rendering)
 	private ByteBufferBuilder worldAllocator;
@@ -73,8 +85,8 @@ public class Blueprint {
 	public Blueprint(String filename) {
 		texturePath = filename;
 		configFile = texturePath + ".json";
-		id = Long.toString(System.currentTimeMillis());
-		LoadConfig();
+		id = "blueprint_" + NEXT_ID.incrementAndGet();
+		loadConfig();
 
 		// Initialize animation data
 		frameTextures = new ArrayList<>();
@@ -83,18 +95,18 @@ public class Blueprint {
 		lastFrameTime = System.currentTimeMillis();
 
 		// Load texture(s) - handle both static images and GIFs
-		if (Util.IsGifFile(texturePath)) {
+		if (Util.isGifFile(texturePath)) {
 			loadGifTextures();
 		} else {
 			loadStaticTexture();
 		}
 
-		SaveConfig();
+		saveConfig();
 	}
 
 	private void loadStaticTexture() {
 		textureId = Identifier.fromNamespaceAndPath(Main.MOD_ID, id);
-		texture = Util.RegisterTexture(texturePath, textureId);
+		texture = Util.registerTexture(texturePath, textureId);
 		if (texture != null) {
 			aspectRatio = (float) texture.getPixels().getWidth() / (float) texture.getPixels().getHeight();
 		}
@@ -102,11 +114,11 @@ public class Blueprint {
 	}
 
 	private void loadGifTextures() {
-		gifAnimation = Util.LoadGif(texturePath);
+		gifAnimation = Util.loadGif(texturePath);
 		isAnimated = gifAnimation.isAnimated;
 
 		if (gifAnimation.frames.isEmpty()) {
-			Main.LOGGER.error("No frames loaded from GIF: " + texturePath);
+			Main.LOGGER.error("No frames loaded from GIF: {}", texturePath);
 			return;
 		}
 
@@ -131,7 +143,7 @@ public class Blueprint {
 			aspectRatio = (float) texture.getPixels().getWidth() / (float) texture.getPixels().getHeight();
 		}
 
-		Main.LOGGER.info("Loaded animated GIF with " + gifAnimation.frames.size() + " frames: " + texturePath);
+		Main.LOGGER.info("Loaded animated GIF with {} frames: {}", gifAnimation.frames.size(), texturePath);
 	}
 
 	private void updateAnimation() {
@@ -154,78 +166,41 @@ public class Blueprint {
 		}
 	}
 
-	private void LoadConfig() {
-		Minecraft client = Minecraft.getInstance();
-		// start with default values:
-		scaleX = 1.0f;
-		scaleY = 1.0f;
-		positionX = (float) client.player.getX();
-		positionY = (float) client.player.getY();
-		positionZ = (float) client.player.getZ();
-		rotationX = 0.0f;
-		rotationY = 0.0f;
-		rotationZ = 0.0f;
+	private void loadConfig() {
+		config = new Config();
 		order = -1;
-		alpha = 1.0f;
-		visibility = true;
 
-		try {
-			File file = new File(configFile);
-			if (file.exists()) {
-				Main.LOGGER.info("Loading config: " + configFile);
-				// use gson to load configFile
-				Gson gson = new Gson();
-				JsonReader reader = new JsonReader(new FileReader(configFile));
-				JsonObject obj = gson.fromJson(reader, JsonObject.class);
-				if (obj != null && obj.has("scaleX"))
-					scaleX = obj.get("scaleX").getAsFloat();
-				if (obj != null && obj.has("scaleY"))
-					scaleY = obj.get("scaleY").getAsFloat();
-				if (obj != null && obj.has("positionX"))
-					positionX = obj.get("positionX").getAsFloat();
-				if (obj != null && obj.has("positionY"))
-					positionY = obj.get("positionY").getAsFloat();
-				if (obj != null && obj.has("positionZ"))
-					positionZ = obj.get("positionZ").getAsFloat();
-				if (obj != null && obj.has("rotationX"))
-					rotationX = obj.get("rotationX").getAsFloat();
-				if (obj != null && obj.has("rotationY"))
-					rotationY = obj.get("rotationY").getAsFloat();
-				if (obj != null && obj.has("rotationZ"))
-					rotationZ = obj.get("rotationZ").getAsFloat();
-				if (obj != null && obj.has("alpha"))
-					alpha = obj.get("alpha").getAsFloat();
-				if (obj != null && obj.has("visibility"))
-					visibility = obj.get("visibility").getAsBoolean();
-			} else {
-				Main.LOGGER.info("Config file not found: " + configFile);
+		// New blueprints start at the player's feet rather than the world origin.
+		LocalPlayer player = Minecraft.getInstance().player;
+		if (player != null) {
+			config.positionX = (float) player.getX();
+			config.positionY = (float) player.getY();
+			config.positionZ = (float) player.getZ();
+		}
+
+		File file = new File(configFile);
+		if (!file.exists()) {
+			Main.LOGGER.info("Config file not found: {}", configFile);
+			return;
+		}
+
+		Main.LOGGER.info("Loading config: {}", configFile);
+		try (FileReader reader = new FileReader(file)) {
+			Config loaded = GSON.fromJson(reader, Config.class);
+			if (loaded != null) {
+				config = loaded;
 			}
 		} catch (Exception e) {
-			Main.LOGGER.error("Failed to load config: " + configFile);
-			Main.LOGGER.error(e.getMessage());
+			Main.LOGGER.error("Failed to load config: {}", configFile, e);
 		}
 	}
 
-	public void SaveConfig() {
-		try {
-			Main.LOGGER.info("Saving config: " + configFile);
-			JsonObject obj = new JsonObject();
-			obj.addProperty("scaleX", scaleX);
-			obj.addProperty("scaleY", scaleY);
-			obj.addProperty("positionX", positionX);
-			obj.addProperty("positionY", positionY);
-			obj.addProperty("positionZ", positionZ);
-			obj.addProperty("rotationX", rotationX);
-			obj.addProperty("rotationY", rotationY);
-			obj.addProperty("rotationZ", rotationZ);
-			obj.addProperty("alpha", alpha);
-			obj.addProperty("visibility", visibility);
-			String json = obj.toString();
-			java.nio.file.Files.write(java.nio.file.Paths.get(configFile), json.getBytes());
+	public void saveConfig() {
+		Main.LOGGER.info("Saving config: {}", configFile);
+		try (FileWriter writer = new FileWriter(configFile)) {
+			GSON.toJson(config, writer);
 		} catch (Exception e) {
-			Main.LOGGER.error("Failed to save config: " + configFile);
-			Main.LOGGER.error(e.getMessage());
-			return;
+			Main.LOGGER.error("Failed to save config: {}", configFile, e);
 		}
 	}
 
@@ -235,7 +210,7 @@ public class Blueprint {
 	 * Uses a direct GPU render pass so that DynamicTransforms UBO is correctly bound.
 	 */
 	public void renderWorld(Camera camera, boolean renderThroughBlocks) {
-		if (texture == null || !visibility || BlueprintPipelines.BLUEPRINT_WORLD == null || BlueprintPipelines.BLUEPRINT_ALL == null) {
+		if (texture == null || !config.visibility || BlueprintPipelines.BLUEPRINT_WORLD == null || BlueprintPipelines.BLUEPRINT_ALL == null) {
 			return;
 		}
 
@@ -248,10 +223,10 @@ public class Blueprint {
 		// Blueprint model matrix: camera-origin translation + local rotations.
 		Vec3 cam = camera.position();
 		PoseStack ms = new PoseStack();
-		ms.translate((float)(positionX - cam.x), (float)(positionY - cam.y), (float)(positionZ - cam.z));
-		ms.mulPose(Axis.XP.rotationDegrees(rotationX));
-		ms.mulPose(Axis.YP.rotationDegrees(rotationY));
-		ms.mulPose(Axis.ZP.rotationDegrees(rotationZ));
+		ms.translate((float)(config.positionX - cam.x), (float)(config.positionY - cam.y), (float)(config.positionZ - cam.z));
+		ms.mulPose(Axis.XP.rotationDegrees(config.rotationX));
+		ms.mulPose(Axis.YP.rotationDegrees(config.rotationY));
+		ms.mulPose(Axis.ZP.rotationDegrees(config.rotationZ));
 		Matrix4f modelMatrix = new Matrix4f(ms.last().pose());
 
 		// Full model-view = current view matrix × blueprint model matrix.
@@ -264,6 +239,9 @@ public class Blueprint {
 			worldAllocator = new ByteBufferBuilder(vertexSize * 4 + 64);
 		}
 
+		float scaleX = config.scaleX;
+		float scaleY = config.scaleY;
+		float alpha = config.alpha;
 		BufferBuilder buffer = new BufferBuilder(worldAllocator, drawMode, vertexFormat);
 		buffer.addVertex(-scaleX, -scaleY / aspectRatio, 0).setUv(0f, 1f).setColor(1f, 1f, 1f, alpha);
 		buffer.addVertex( scaleX, -scaleY / aspectRatio, 0).setUv(1f, 1f).setColor(1f, 1f, 1f, alpha);
@@ -335,9 +313,30 @@ public class Blueprint {
 		}
 	}
 
+	/**
+	 * Release all GPU resources held by this blueprint: registered textures
+	 * (including every GIF frame) and the world-space vertex buffers.
+	 * Must be called before dropping a Blueprint, e.g. on filesystem rescan.
+	 */
+	public void close() {
+		TextureManager textureManager = Minecraft.getInstance().getTextureManager();
+		if (frameTextureIds.isEmpty()) {
+			if (textureId != null) {
+				textureManager.release(textureId);
+			}
+		} else {
+			frameTextureIds.forEach(textureManager::release);
+		}
+		texture = null;
+		textureId = null;
+		frameTextures.clear();
+		frameTextureIds.clear();
+		closeWorldResources();
+	}
+
 	public void renderThumbnail(GuiGraphicsExtractor drawContext, int x, int y, int width, int height, boolean includeFrame) {
 		if (texture == null) {
-			Main.LOGGER.error('"' + texturePath + '"' + " is not a valid image file.");
+			Main.LOGGER.error("\"{}\" is not a valid image file.", texturePath);
 			return;
 		}
 
@@ -356,156 +355,139 @@ public class Blueprint {
 				height);
 	}
 
-	public void NudgeRotation(net.minecraft.core.Direction.Axis axis, float amount, boolean multiply, boolean finetune) {
-		TransformUtils.Rotation current = new TransformUtils.Rotation(rotationX, rotationY, rotationZ);
+	public void nudgeRotation(net.minecraft.core.Direction.Axis axis, float amount, boolean multiply, boolean finetune) {
+		TransformUtils.Rotation current = new TransformUtils.Rotation(config.rotationX, config.rotationY, config.rotationZ);
 		TransformUtils.Rotation newRotation = TransformUtils.nudgeRotation3D(current, axis, amount, multiply, finetune);
 
-		rotationX = newRotation.x;
-		rotationY = newRotation.y;
-		rotationZ = newRotation.z;
+		config.rotationX = newRotation.x;
+		config.rotationY = newRotation.y;
+		config.rotationZ = newRotation.z;
 	}
 
-	public void NudgePosition(vernando.blueprints.Util.Direction direction, float amount, boolean multiply,
-			boolean finetune) {
-		TransformUtils.Position current = new TransformUtils.Position(positionX, positionY, positionZ);
+	public void nudgePosition(Util.Direction direction, float amount, boolean multiply, boolean finetune) {
+		TransformUtils.Position current = new TransformUtils.Position(config.positionX, config.positionY, config.positionZ);
 		TransformUtils.Position newPosition = TransformUtils.nudgePosition3D(current, direction, amount, multiply, finetune);
 
-		positionX = newPosition.x;
-		positionY = newPosition.y;
-		positionZ = newPosition.z;
+		config.positionX = newPosition.x;
+		config.positionY = newPosition.y;
+		config.positionZ = newPosition.z;
 	}
 
-	public void NudgeAlpha(float amount, boolean multiply, boolean finetune) {
-		alpha = TransformUtils.nudgeAlpha(alpha, amount, multiply, finetune);
+	public void nudgeAlpha(float amount, boolean multiply, boolean finetune) {
+		config.alpha = TransformUtils.nudgeAlpha(config.alpha, amount, multiply, finetune);
 	}
 
-	public void SetPosition(float x, float y, float z) {
-		positionX = x;
-		positionY = y;
-		positionZ = z;
+	public void setPosition(float x, float y, float z) {
+		config.positionX = x;
+		config.positionY = y;
+		config.positionZ = z;
 	}
 
-	public void NudgeScale(net.minecraft.core.Direction.Axis axis, float amount, boolean multiply, boolean finetune) {
-		TransformUtils.Scale current = new TransformUtils.Scale(scaleX, scaleY);
+	public void nudgeScale(net.minecraft.core.Direction.Axis axis, float amount, boolean multiply, boolean finetune) {
+		TransformUtils.Scale current = new TransformUtils.Scale(config.scaleX, config.scaleY);
 		TransformUtils.Scale newScale = TransformUtils.nudgeScale2D(current, axis, amount, multiply, finetune);
 
-		scaleX = newScale.x;
-		scaleY = newScale.y;
+		config.scaleX = newScale.x;
+		config.scaleY = newScale.y;
 	}
 
 	public String getName() {
 		return MathUtils.getFilenameFromPath(texturePath);
 	}
 
-	public void ToggleVisibility() {
-		this.visibility = !this.visibility;
-	}
-
 	public boolean isVisible() {
-		return this.visibility;
+		return config.visibility;
 	}
 
-	public void ResetRotation() {
-		rotationX = 0.0f;
-		rotationY = 0.0f;
-		rotationZ = 0.0f;
+	public void setVisible(boolean visible) {
+		config.visibility = visible;
 	}
 
-	public void ResetScale() {
-		scaleX = 1.0f;
-		scaleY = scaleX / aspectRatio;
+	public void resetRotation() {
+		config.rotationX = 0.0f;
+		config.rotationY = 0.0f;
+		config.rotationZ = 0.0f;
 	}
 
-	public void setVisible(boolean b) {
-		this.visibility = b;
+	public void resetScale() {
+		config.scaleX = 1.0f;
+		config.scaleY = config.scaleX / aspectRatio;
 	}
 
 	public String getFilename() {
 		return texturePath;
 	}
 
-	public Float getPosX() {
-		return positionX;
+	public float getPosX() {
+		return config.positionX;
 	}
 
-	public Float getPosY() {
-		return positionY;
+	public float getPosY() {
+		return config.positionY;
 	}
 
-	public Float getPosZ() {
-		return positionZ;
+	public float getPosZ() {
+		return config.positionZ;
 	}
 
-	public Float getRotationX() {
-		return rotationX;
+	public float getRotationX() {
+		return config.rotationX;
 	}
 
-	public Float getRotationY() {
-		return rotationY;
+	public float getRotationY() {
+		return config.rotationY;
 	}
 
-	public Float getRotationZ() {
-		return rotationZ;
+	public float getRotationZ() {
+		return config.rotationZ;
 	}
 
-	public Float getScaleX() {
-		return scaleX;
+	public float getScaleX() {
+		return config.scaleX;
 	}
 
-	public Float getScaleY() {
-		return scaleY;
+	public float getScaleY() {
+		return config.scaleY;
 	}
 
-	public Float getAlpha() {
-		return alpha;
-	}
-
-	public String getVisibility() {
-		return Boolean.toString(visibility);
-	}
-
-	public void setVisibility(boolean b) {
-		this.visibility = b;
+	public float getAlpha() {
+		return config.alpha;
 	}
 
 	public void setPosX(float f) {
-		positionX = f;
+		config.positionX = f;
 	}
 
 	public void setPosY(float f) {
-		positionY = f;
+		config.positionY = f;
 	}
 
 	public void setPosZ(float f) {
-		positionZ = f;
+		config.positionZ = f;
 	}
 
 	public void setRotationX(float f) {
-		rotationX = f;
+		config.rotationX = f;
 	}
 
 	public void setRotationY(float f) {
-		rotationY = f;
+		config.rotationY = f;
 	}
 
 	public void setRotationZ(float f) {
-		rotationZ = f;
+		config.rotationZ = f;
 	}
 
 	public void setScaleX(float f) {
-		scaleX = f;
+		config.scaleX = f;
 	}
 
 	public void setScaleY(float f) {
-		scaleY = f;
+		config.scaleY = f;
 	}
 
 	public void setAlpha(float f) {
-		alpha = f;
-	}
-
-	public void setVisibility(String string) {
-		visibility = Boolean.parseBoolean(string);
+		config.alpha = f;
 	}
 
 	/**
@@ -515,7 +497,7 @@ public class Blueprint {
 	 */
 	public double getDistanceFromCamera(Camera camera) {
 		Vec3 cameraPos = camera.position();
-		Vec3 blueprintPos = new Vec3(positionX, positionY, positionZ);
+		Vec3 blueprintPos = new Vec3(config.positionX, config.positionY, config.positionZ);
 		return cameraPos.distanceTo(blueprintPos);
 	}
 

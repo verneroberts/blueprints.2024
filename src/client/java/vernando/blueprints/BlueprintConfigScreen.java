@@ -4,13 +4,11 @@ import java.util.ArrayList;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.StringWidget;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import org.lwjgl.glfw.GLFW;
 
 @Environment(EnvType.CLIENT)
 public class BlueprintConfigScreen extends Screen {
@@ -18,6 +16,8 @@ public class BlueprintConfigScreen extends Screen {
 	private Screen parent;
 	private Integer blurSetting;
 	private ArrayList<NumberFieldWidget> inputBoxes;
+	private NumberFieldWidget scaleXField;
+	private NumberFieldWidget scaleYField;
 	int rowHeight = 17;
 	int rowPadding = 2;
 	int columnWidth = 60;
@@ -40,7 +40,7 @@ public class BlueprintConfigScreen extends Screen {
 
 	@Override
 	public void onClose() {
-		blueprint.SaveConfig();
+		blueprint.saveConfig();
 		minecraft.setScreen(parent);
 		// restore blur setting
 		minecraft.options.menuBackgroundBlurriness().set(blurSetting);
@@ -52,7 +52,7 @@ public class BlueprintConfigScreen extends Screen {
 
 		// make sure the blueprint is visible if we are here
 		if (!blueprint.isVisible()) {
-			blueprint.setVisibility(true);
+			blueprint.setVisible(true);
 		}
 
 		// save the current blur setting then set it to 0
@@ -79,6 +79,8 @@ public class BlueprintConfigScreen extends Screen {
 				blueprint.getAlpha(), (v) -> blueprint.setAlpha(v), "Alpha", 0.1f)
 				.setMaxValue(1f)
 				.setMinValue(0f);
+		scaleXField = scaleX;
+		scaleYField = scaleY;
 
 		inputBoxes.add(posX);
 		inputBoxes.add(posY);
@@ -123,7 +125,7 @@ public class BlueprintConfigScreen extends Screen {
 					float x = (float) Math.round(minecraft.player.getX() * 10) / 10;
 					float y = (float) Math.round(minecraft.player.getY() * 10) / 10;
 					float z = (float) Math.round(minecraft.player.getZ() * 10) / 10;
-					blueprint.SetPosition(x,y,z);
+					blueprint.setPosition(x,y,z);
 							posX.setValue(blueprint.getPosX());
 							posY.setValue(blueprint.getPosY());
 							posZ.setValue(blueprint.getPosZ());		
@@ -145,7 +147,7 @@ public class BlueprintConfigScreen extends Screen {
 
 		addRenderableWidget(
 				Button.builder(Component.literal("Reset"), b -> {
-					blueprint.ResetScale();
+					blueprint.resetScale();
 					scaleX.setValue(blueprint.getScaleX());
 					scaleY.setValue(blueprint.getScaleY());
 				})
@@ -176,38 +178,26 @@ public class BlueprintConfigScreen extends Screen {
 	public boolean mouseScrolled(double mouseX, double mouseY, double horizontalAmount, double verticalAmount) {
 		for (NumberFieldWidget input : inputBoxes) {
 			if (input.isHovered()) {
-				Minecraft client = Minecraft.getInstance();
-				boolean shift = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS ||
-					          GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
-				boolean ctrl = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
-					         GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
-				if (verticalAmount > 0) {
-					input.increment(shift, ctrl);
-				} else {
-					input.decrement(shift, ctrl);
-				}				
+				scrollInput(input, verticalAmount);
 				return true;
 			}
 		}
+		// Scrolling over the "Scale" header adjusts width and height together.
 		if (mouseX > c0x && mouseX < c0x + columnWidth && mouseY > row(6) && mouseY < row(6) + rowHeight) {
-			for (NumberFieldWidget input : inputBoxes) {
-				if (input == inputBoxes.get(6) || input == inputBoxes.get(7)) {
-					Minecraft client = Minecraft.getInstance();
-					boolean shift = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_SHIFT) == GLFW.GLFW_PRESS ||
-						          GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_SHIFT) == GLFW.GLFW_PRESS;
-					boolean ctrl = GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_LEFT_CONTROL) == GLFW.GLFW_PRESS ||
-						         GLFW.glfwGetKey(client.getWindow().handle(), GLFW.GLFW_KEY_RIGHT_CONTROL) == GLFW.GLFW_PRESS;
-					if (verticalAmount > 0) {
-						input.increment(shift, ctrl);
-					} else {
-						input.decrement(shift, ctrl);
-					}
-				}
-			}
+			scrollInput(scaleXField, verticalAmount);
+			scrollInput(scaleYField, verticalAmount);
 			return true;
 		}
 
 		return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
+	}
+
+	private void scrollInput(NumberFieldWidget input, double verticalAmount) {
+		if (verticalAmount > 0) {
+			input.increment(Util.isShiftDown(), Util.isCtrlDown());
+		} else {
+			input.decrement(Util.isShiftDown(), Util.isCtrlDown());
+		}
 	}
 
 }

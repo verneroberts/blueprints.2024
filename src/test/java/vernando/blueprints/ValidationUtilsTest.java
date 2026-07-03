@@ -23,58 +23,23 @@ class ValidationUtilsTest {
     @ParameterizedTest
     @ValueSource(strings = {
         "image.jpg", "image.jpeg", "image.png", "image.gif", "image.bmp",
-        "image.tiff", "image.tif", "image.webp", "image.JPG", "image.PNG",
+        "image.tiff", "image.tif", "image.wbmp", "image.JPG", "image.PNG",
         "IMAGE.JPG", "Photo.JPEG"
     })
-    @DisplayName("isImageFile should return true for common image formats")
+    @DisplayName("isImageFile should return true for ImageIO-readable formats")
     void testIsImageFile_CommonFormats(String filename) {
         assertThat(ValidationUtils.isImageFile(filename)).isTrue();
     }
 
     @ParameterizedTest
     @ValueSource(strings = {
-        "image.cr2", "image.nef", "image.arw", "image.dng", "image.orf",
-        "image.rw2", "image.pef", "image.raw"
+        "image.webp", "image.psd", "image.svg", "image.cr2", "image.exr"
     })
-    @DisplayName("isImageFile should return true for RAW formats")
-    void testIsImageFile_RawFormats(String filename) {
-        assertThat(ValidationUtils.isImageFile(filename)).isTrue();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-        "image.psd", "image.psb", "image.ai", "image.eps"
-    })
-    @DisplayName("isImageFile should return true for Adobe formats")
-    void testIsImageFile_AdobeFormats(String filename) {
-        assertThat(ValidationUtils.isImageFile(filename)).isTrue();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-        "image.svg", "image.svgz"
-    })
-    @DisplayName("isImageFile should return true for vector formats")
-    void testIsImageFile_VectorFormats(String filename) {
-        assertThat(ValidationUtils.isImageFile(filename)).isTrue();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-        "image.ico", "image.cur", "image.pcx", "image.ppm"
-    })
-    @DisplayName("isImageFile should return true for other formats")
-    void testIsImageFile_OtherFormats(String filename) {
-        assertThat(ValidationUtils.isImageFile(filename)).isTrue();
-    }
-
-    @ParameterizedTest
-    @ValueSource(strings = {
-        "image.hdr", "image.exr", "image.pfm", "image.rgbe"
-    })
-    @DisplayName("isImageFile should return true for HDR formats")
-    void testIsImageFile_HdrFormats(String filename) {
-        assertThat(ValidationUtils.isImageFile(filename)).isTrue();
+    @DisplayName("isImageFile should return false for formats ImageIO cannot decode by default")
+    void testIsImageFile_UnreadableImageFormats(String filename) {
+        // These are image formats, but the built-in ImageIO readers cannot decode them.
+        // They are only accepted when an installed plugin reports them via dynamic formats.
+        assertThat(ValidationUtils.isImageFile(filename)).isFalse();
     }
 
     @ParameterizedTest
@@ -238,14 +203,7 @@ class ValidationUtilsTest {
     @DisplayName("getSupportedExtensions should contain common formats")
     void testGetSupportedExtensions_CommonFormats() {
         Set<String> extensions = ValidationUtils.getSupportedExtensions();
-        assertThat(extensions).contains("jpg", "jpeg", "png", "gif", "bmp", "tiff", "webp");
-    }
-
-    @Test
-    @DisplayName("getSupportedExtensions should contain RAW formats")
-    void testGetSupportedExtensions_RawFormats() {
-        Set<String> extensions = ValidationUtils.getSupportedExtensions();
-        assertThat(extensions).contains("cr2", "nef", "arw", "dng", "raw");
+        assertThat(extensions).contains("jpg", "jpeg", "png", "gif", "bmp", "tiff");
     }
 
     @Test
@@ -258,7 +216,7 @@ class ValidationUtilsTest {
     // ========== isSupportedExtension Tests ==========
 
     @ParameterizedTest
-    @ValueSource(strings = {"jpg", "png", "gif", "bmp", "webp", "tiff"})
+    @ValueSource(strings = {"jpg", "png", "gif", "bmp", "tiff"})
     @DisplayName("isSupportedExtension should return true for common formats")
     void testIsSupportedExtension_CommonFormats(String extension) {
         assertThat(ValidationUtils.isSupportedExtension(extension)).isTrue();
