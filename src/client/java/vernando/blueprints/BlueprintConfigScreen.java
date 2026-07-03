@@ -41,7 +41,7 @@ public class BlueprintConfigScreen extends Screen {
 	@Override
 	public void onClose() {
 		blueprint.saveConfig();
-		minecraft.setScreen(parent);
+		minecraft.gui.setScreen(parent);
 		// restore blur setting
 		minecraft.options.menuBackgroundBlurriness().set(blurSetting);
 
@@ -156,7 +156,7 @@ public class BlueprintConfigScreen extends Screen {
 
 		addRenderableWidget(
 				Button.builder(Component.literal("Calibrate"), b -> {
-					minecraft.setScreen(new BlueprintCalibrationScreen(blueprint, this));
+					minecraft.gui.setScreen(new BlueprintCalibrationScreen(blueprint, this));
 				})
 						.bounds(c2x, row(9), columnWidth, rowHeight)
 						.build());

@@ -63,7 +63,7 @@ public class BlueprintsConfigScreen extends Screen {
 
     addRenderableWidget(
         Button.builder(Component.literal("Close"), b -> {
-          minecraft.setScreen(null);
+          minecraft.gui.setScreen(null);
         })
             .bounds(width - 100, 10, 50, 20)
             .build());
@@ -118,7 +118,7 @@ public class BlueprintsConfigScreen extends Screen {
         if (Util.isCtrlDown()) {
           blueprint.setVisible(!blueprint.isVisible());
         } else {
-          minecraft.setScreen(new BlueprintConfigScreen(blueprint, this));
+          minecraft.gui.setScreen(new BlueprintConfigScreen(blueprint, this));
         }
       })
       .bounds(pos[0], pos[1], imageWidth - 3, imageHeight - 3)

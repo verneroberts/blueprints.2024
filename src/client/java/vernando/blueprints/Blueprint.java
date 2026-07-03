@@ -5,8 +5,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalDouble;
-import java.util.OptionalInt;
 import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -24,6 +24,8 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
+import com.mojang.blaze3d.IndexType;
+import com.mojang.blaze3d.PrimitiveTopology;
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
@@ -217,8 +219,8 @@ public class Blueprint {
 		updateAnimation();
 
 		RenderPipeline pipeline = renderThroughBlocks ? BlueprintPipelines.BLUEPRINT_ALL : BlueprintPipelines.BLUEPRINT_WORLD;
-		VertexFormat vertexFormat = pipeline.getVertexFormat();
-		VertexFormat.Mode drawMode = pipeline.getVertexFormatMode();
+		VertexFormat vertexFormat = pipeline.getVertexFormatBinding(0);
+		PrimitiveTopology drawMode = pipeline.getPrimitiveTopology();
 
 		// Blueprint model matrix: camera-origin translation + local rotations.
 		Vec3 cam = camera.position();
@@ -231,7 +233,7 @@ public class Blueprint {
 
 		// Full model-view = current view matrix × blueprint model matrix.
 		// Vertices submitted in local space; shader applies this full transform.
-		Matrix4f modelViewMatrix = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(modelMatrix);
+		Matrix4f modelViewMatrix = RenderSystem.getModelViewMatrixCopy().mul(modelMatrix);
 
 		// Build vertex buffer (local quad coords, not pre-transformed by model matrix).
 		int vertexSize = vertexFormat.getVertexSize();
@@ -263,15 +265,14 @@ public class Blueprint {
 		}
 
 		GpuBuffer gpuBuf = worldVertexBuffer.currentBuffer();
-		try (GpuBuffer.MappedView mappedView = RenderSystem.getDevice().createCommandEncoder()
-				.mapBuffer(gpuBuf, false, true)) {
+		try (GpuBufferSlice.MappedView mappedView = gpuBuf.map(false, true)) {
 			MemoryUtil.memCopy(builtBuffer.vertexBuffer(), mappedView.data());
 		}
 
 		// Sequential index buffer works for both QUADS and other draw modes.
 		RenderSystem.AutoStorageIndexBuffer seqBuf = RenderSystem.getSequentialBuffer(drawMode);
 		GpuBuffer indices = seqBuf.getBuffer(drawParams.indexCount());
-		VertexFormat.IndexType indexType = seqBuf.type();
+		IndexType indexType = seqBuf.type();
 
 		// Write DynamicTransforms UBO (model-view matrix + identity texture transform).
 		GpuBufferSlice dynamicTransforms = RenderSystem.getDynamicUniforms()
@@ -285,17 +286,17 @@ public class Blueprint {
 		try (RenderPass rp = RenderSystem.getDevice().createCommandEncoder()
 				.createRenderPass(
 					() -> "blueprint_world_render",
-					client.getMainRenderTarget().getColorTextureView(),
-					OptionalInt.empty(),
-					client.getMainRenderTarget().getDepthTextureView(),
+					client.gameRenderer.mainRenderTarget().getColorTextureView(),
+					Optional.empty(),
+					client.gameRenderer.mainRenderTarget().getDepthTextureView(),
 					OptionalDouble.empty())) {
 			rp.setPipeline(pipeline);
 			RenderSystem.bindDefaultUniforms(rp);
 			rp.setUniform("DynamicTransforms", dynamicTransforms);
 			rp.bindTexture("Sampler0", tex.getTextureView(), tex.getSampler());
-			rp.setVertexBuffer(0, gpuBuf);
+			rp.setVertexBuffer(0, gpuBuf.slice());
 			rp.setIndexBuffer(indices, indexType);
-			rp.drawIndexed(0, 0, drawParams.indexCount(), 1);
+			rp.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
 		}
 
 		builtBuffer.close();

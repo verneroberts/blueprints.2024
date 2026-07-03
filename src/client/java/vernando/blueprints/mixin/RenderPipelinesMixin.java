@@ -1,5 +1,6 @@
 package vernando.blueprints.mixin;
 
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,6 +22,10 @@ import vernando.blueprints.BlueprintPipelines;
 public class RenderPipelinesMixin {
 
     @Shadow
+    @Final
+    private static RenderPipeline.Snippet GUI_TEXTURED_SNIPPET;
+
+    @Shadow
     private static RenderPipeline register(RenderPipeline pipeline) {
         throw new AssertionError();
     }
@@ -29,7 +34,7 @@ public class RenderPipelinesMixin {
     private static void onStaticInit(CallbackInfo ci) {
         LoggerFactory.getLogger("blueprints").info("[Blueprints] Registering BLUEPRINT_WORLD pipeline");
         BlueprintPipelines.BLUEPRINT_WORLD = register(
-            RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+            RenderPipeline.builder(GUI_TEXTURED_SNIPPET)
                 .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
                 .withCull(false)
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
@@ -37,7 +42,7 @@ public class RenderPipelinesMixin {
                 .build()
         );
         BlueprintPipelines.BLUEPRINT_ALL = register(
-            RenderPipeline.builder(RenderPipelines.GUI_TEXTURED_SNIPPET)
+            RenderPipeline.builder(GUI_TEXTURED_SNIPPET)
                 .withDepthStencilState(Optional.empty())
                 .withCull(false)
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))

@@ -63,7 +63,7 @@ public class Main implements ModInitializer {
 			}
 
 			if (keyLaunchConfig.consumeClick()) {
-				client.setScreen(new BlueprintsConfigScreen(blueprintManager.getBlueprints()));
+				client.gui.setScreen(new BlueprintsConfigScreen(blueprintManager.getBlueprints()));
 			}
 
 			if (keyPush.consumeClick()) {
@@ -101,7 +101,7 @@ public class Main implements ModInitializer {
 			return;
 		}
 
-		Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+		Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
 
 		List<Blueprint> sorted = new ArrayList<>(BlueprintsManager.getInstance().getBlueprints());
 		sorted.sort((a, b) -> Double.compare(
