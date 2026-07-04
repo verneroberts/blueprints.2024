@@ -35,7 +35,7 @@ public class RenderPipelinesMixin {
         LoggerFactory.getLogger("blueprints").info("[Blueprints] Registering BLUEPRINT_WORLD pipeline");
         BlueprintPipelines.BLUEPRINT_WORLD = register(
             RenderPipeline.builder(GUI_TEXTURED_SNIPPET)
-                .withDepthStencilState(new DepthStencilState(CompareOp.LESS_THAN_OR_EQUAL, true))
+                .withDepthStencilState(new DepthStencilState(CompareOp.GREATER_THAN_OR_EQUAL, true))
                 .withCull(false)
                 .withColorTargetState(new ColorTargetState(BlendFunction.TRANSLUCENT))
                 .withLocation(Identifier.fromNamespaceAndPath("blueprints", "pipeline/blueprint_visible"))
