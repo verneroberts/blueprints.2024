@@ -168,24 +168,6 @@ public class Util {
 		}
 	}
 
-	private static Identifier whiteTextureId;
-
-	/**
-	 * A 1x1 white texture, registered on first use. Lets untextured geometry (grid
-	 * lines) run through the same textured pipeline using plain vertex colors.
-	 */
-	public static Identifier getWhiteTextureId() {
-		if (whiteTextureId == null) {
-			Identifier id = Identifier.fromNamespaceAndPath(Main.MOD_ID, "white_pixel");
-			NativeImage image = new NativeImage(1, 1, false);
-			image.setPixelABGR(0, 0, 0xFFFFFFFF);
-			DynamicTexture texture = new DynamicTexture(() -> "blueprints white pixel", image);
-			Minecraft.getInstance().getTextureManager().register(id, texture);
-			whiteTextureId = id;
-		}
-		return whiteTextureId;
-	}
-
 	/**
 	 * Copy dropped image files into the current world/dimension blueprint folder.
 	 * Existing files are never overwritten; a numeric suffix is added instead.

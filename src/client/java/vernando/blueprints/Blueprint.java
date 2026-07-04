@@ -61,8 +61,6 @@ public class Blueprint {
 		boolean visibility = true;
 		boolean flipHorizontal;
 		boolean flipVertical;
-		int gridMode; // 0 = off, 1 = dark lines, 2 = light lines
-		float gridSpacing = 1.0f; // in blocks
 	}
 
 	private DynamicTexture texture;
@@ -87,12 +85,6 @@ public class Blueprint {
 	// World-space direct render resources (for depth-tested rendering)
 	private ByteBufferBuilder worldAllocator;
 	private MappableRingBuffer worldVertexBuffer;
-	private ByteBufferBuilder gridAllocator;
-	private MappableRingBuffer gridVertexBuffer;
-
-	// Cap grid lines per axis so a huge image with a tiny spacing can't build an enormous mesh
-	private static final int MAX_GRID_LINES_PER_AXIS = 257;
-
 	public Blueprint(String filename) {
 		texturePath = filename;
 		configFile = texturePath + ".json";
@@ -316,104 +308,6 @@ public class Blueprint {
 
 		builtBuffer.close();
 		worldVertexBuffer.rotate();
-
-		if (config.gridMode > 0) {
-			renderGrid(pipeline, vertexFormat, drawMode, dynamicTransforms, halfHeight);
-		}
-	}
-
-	/**
-	 * Render a block-spaced grid over the image in a second pass, using a 1x1 white
-	 * texture so lines can be drawn with plain vertex colors through the same pipeline.
-	 * Lines are anchored to the top-left corner of the image and spaced gridSpacing
-	 * blocks apart in local space, so a calibrated image gets a true block grid.
-	 */
-	private void renderGrid(RenderPipeline pipeline, VertexFormat vertexFormat, PrimitiveTopology drawMode,
-			GpuBufferSlice dynamicTransforms, float halfHeight) {
-		float scaleX = config.scaleX;
-		float lineAlpha = 0.6f * config.alpha;
-		if (lineAlpha <= 0.01f) {
-			return;
-		}
-		float shade = config.gridMode == 2 ? 1f : 0f;
-		float spacing = Math.max(0.1f, config.gridSpacing);
-		// half thickness; thin lines, but never wider than a quarter of a cell
-		float t = Math.min(0.02f, spacing / 8f);
-
-		int vertexSize = vertexFormat.getVertexSize();
-		if (gridAllocator == null) {
-			gridAllocator = new ByteBufferBuilder(vertexSize * 4 * 64);
-		}
-
-		BufferBuilder buffer = new BufferBuilder(gridAllocator, drawMode, vertexFormat);
-		// vertical lines, anchored at the left edge, plus the right edge
-		for (int i = 0; i < MAX_GRID_LINES_PER_AXIS; i++) {
-			float x = -scaleX + i * spacing;
-			if (x >= scaleX - t) {
-				break;
-			}
-			addGridQuad(buffer, Math.max(x - t, -scaleX), -halfHeight, x + t, halfHeight, shade, lineAlpha);
-		}
-		addGridQuad(buffer, scaleX - 2 * t, -halfHeight, scaleX, halfHeight, shade, lineAlpha);
-		// horizontal lines, anchored at the top edge, plus the bottom edge
-		for (int i = 0; i < MAX_GRID_LINES_PER_AXIS; i++) {
-			float y = halfHeight - i * spacing;
-			if (y <= -halfHeight + t) {
-				break;
-			}
-			addGridQuad(buffer, -scaleX, y - t, scaleX, Math.min(y + t, halfHeight), shade, lineAlpha);
-		}
-		addGridQuad(buffer, -scaleX, -halfHeight, scaleX, -halfHeight + 2 * t, shade, lineAlpha);
-
-		MeshData mesh = buffer.buildOrThrow();
-		MeshData.DrawState drawParams = mesh.drawState();
-
-		int bufSize = drawParams.vertexCount() * vertexSize;
-		if (gridVertexBuffer == null || gridVertexBuffer.size() < bufSize) {
-			if (gridVertexBuffer != null) gridVertexBuffer.close();
-			gridVertexBuffer = new MappableRingBuffer(
-				() -> "blueprints_grid_" + id,
-				GpuBuffer.USAGE_VERTEX | GpuBuffer.USAGE_MAP_WRITE,
-				bufSize
-			);
-		}
-
-		GpuBuffer gpuBuf = gridVertexBuffer.currentBuffer();
-		try (GpuBufferSlice.MappedView mappedView = gpuBuf.map(false, true)) {
-			MemoryUtil.memCopy(mesh.vertexBuffer(), mappedView.data());
-		}
-
-		RenderSystem.AutoStorageIndexBuffer seqBuf = RenderSystem.getSequentialBuffer(drawMode);
-		GpuBuffer indices = seqBuf.getBuffer(drawParams.indexCount());
-		IndexType indexType = seqBuf.type();
-
-		Minecraft client = Minecraft.getInstance();
-		AbstractTexture tex = client.getTextureManager().getTexture(Util.getWhiteTextureId());
-		try (RenderPass rp = RenderSystem.getDevice().createCommandEncoder()
-				.createRenderPass(
-					() -> "blueprint_grid_render",
-					client.gameRenderer.mainRenderTarget().getColorTextureView(),
-					Optional.empty(),
-					client.gameRenderer.mainRenderTarget().getDepthTextureView(),
-					OptionalDouble.empty())) {
-			rp.setPipeline(pipeline);
-			RenderSystem.bindDefaultUniforms(rp);
-			rp.setUniform("DynamicTransforms", dynamicTransforms);
-			rp.bindTexture("Sampler0", tex.getTextureView(), tex.getSampler());
-			rp.setVertexBuffer(0, gpuBuf.slice());
-			rp.setIndexBuffer(indices, indexType);
-			rp.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
-		}
-
-		mesh.close();
-		gridVertexBuffer.rotate();
-	}
-
-	private void addGridQuad(BufferBuilder buffer, float x0, float y0, float x1, float y1, float shade, float a) {
-		buffer.addVertex(x0, y0, 0).setUv(0f, 1f).setColor(shade, shade, shade, a);
-		buffer.addVertex(x1, y0, 0).setUv(1f, 1f).setColor(shade, shade, shade, a);
-		buffer.addVertex(x1, y1, 0).setUv(1f, 0f).setColor(shade, shade, shade, a);
-		buffer.addVertex(x0, y1, 0).setUv(0f, 0f).setColor(shade, shade, shade, a);
 	}
 
 	public void closeWorldResources() {
@@ -424,14 +318,6 @@ public class Blueprint {
 		if (worldAllocator != null) {
 			worldAllocator.close();
 			worldAllocator = null;
-		}
-		if (gridVertexBuffer != null) {
-			gridVertexBuffer.close();
-			gridVertexBuffer = null;
-		}
-		if (gridAllocator != null) {
-			gridAllocator.close();
-			gridAllocator = null;
 		}
 	}
 
@@ -626,22 +512,6 @@ public class Blueprint {
 
 	public void toggleFlipVertical() {
 		config.flipVertical = !config.flipVertical;
-	}
-
-	public int getGridMode() {
-		return config.gridMode;
-	}
-
-	public void cycleGridMode() {
-		config.gridMode = (config.gridMode + 1) % 3;
-	}
-
-	public float getGridSpacing() {
-		return config.gridSpacing;
-	}
-
-	public void setGridSpacing(float f) {
-		config.gridSpacing = Math.max(0.1f, f);
 	}
 
 	/**

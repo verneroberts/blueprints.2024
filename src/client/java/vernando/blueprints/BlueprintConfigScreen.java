@@ -32,14 +32,6 @@ public class BlueprintConfigScreen extends Screen {
 		return rowNumber * (rowHeight + rowPadding);
 	}
 
-	private String gridModeLabel() {
-		switch (blueprint.getGridMode()) {
-			case 1: return "Grid: Dark";
-			case 2: return "Grid: Light";
-			default: return "Grid: Off";
-		}
-	}
-
 	protected BlueprintConfigScreen(Blueprint blueprint, Screen parent) {
 		super(Component.literal(Main.MOD_NAME + " " + blueprint.getName() + " Config"));
 		this.blueprint = blueprint;
@@ -170,7 +162,7 @@ public class BlueprintConfigScreen extends Screen {
 						.bounds(c2x, row(9), columnWidth, rowHeight)
 						.build());
 
-		// Display section: mirroring and block grid overlay
+		// Display section: mirroring
 		addRenderableWidget(new StringWidget(c3x + 4, 5 + row(1) + textOffset, this.font.width("Display"), rowHeight, Component.literal("Display"), this.font));
 
 		addRenderableWidget(
@@ -188,20 +180,6 @@ public class BlueprintConfigScreen extends Screen {
 				})
 						.bounds(c3x, row(3), columnWidth, rowHeight)
 						.build());
-
-		addRenderableWidget(
-				Button.builder(Component.literal(gridModeLabel()), b -> {
-					blueprint.cycleGridMode();
-					b.setMessage(Component.literal(gridModeLabel()));
-				})
-						.bounds(c3x, row(4), columnWidth, rowHeight)
-						.build());
-
-		NumberFieldWidget gridSpacing = new NumberFieldWidget(font, c3x, row(5), columnWidth, rowHeight,
-				blueprint.getGridSpacing(), (v) -> blueprint.setGridSpacing(v), "Grid spacing (blocks)", 0.5f)
-				.setMinValue(0.1f);
-		inputBoxes.add(gridSpacing);
-		addRenderableWidget(gridSpacing);
 
 				addRenderableWidget(
 				Button.builder(Component.literal("Done"), b -> {
