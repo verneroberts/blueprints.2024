@@ -2,7 +2,7 @@
 
 All notable changes to the Blueprints mod will be documented in this file.
 
-## [26.2.12] - 2026-07-03
+## [26.2.12] - 2026-07-04
 
 ### Added
 - Flip/mirror toggles per blueprint (horizontal and vertical)
