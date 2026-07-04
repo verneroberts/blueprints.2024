@@ -7,7 +7,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.level.LevelRenderEvents;
 import net.minecraft.client.Camera;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -39,12 +38,6 @@ public class Main implements ModInitializer {
 		keyPush = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.blueprints.push", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_EQUAL, category));
 
 		Settings.loadSettings();
-
-		// Render-visible mode: depth-tested, renders only where not occluded by blocks.
-		LevelRenderEvents.BEFORE_TRANSLUCENT_TERRAIN.register(context -> renderBlueprints(false));
-
-		// Render-all mode: no depth testing, renders through blocks.
-		LevelRenderEvents.END_MAIN.register(context -> renderBlueprints(true));
 
 		ClientTickEvents.END_CLIENT_TICK.register(client -> {
 			if (client.player == null || client.level == null || client.options == null) {
@@ -93,14 +86,17 @@ public class Main implements ModInitializer {
 
 	/**
 	 * Render all blueprints back-to-front (translucency needs far-to-near draw order).
-	 * Each render event calls this with its own mode; only the mode matching the
-	 * current setting actually draws.
+	 * Called by LevelRendererMixin after the level frame graph has fully executed
+	 * (terrain, clouds, weather), so the depth buffer is complete: render-visible
+	 * mode depth-tests against everything including clouds, and render-all mode
+	 * draws on top of everything.
 	 */
-	private void renderBlueprints(boolean renderThroughBlocks) {
-		if (!isVisible() || Settings.getRenderThroughBlocks() != renderThroughBlocks) {
+	public static void renderAfterLevel() {
+		if (!isVisible()) {
 			return;
 		}
 
+		boolean renderThroughBlocks = Settings.getRenderThroughBlocks();
 		Camera camera = Minecraft.getInstance().gameRenderer.mainCamera();
 
 		List<Blueprint> sorted = new ArrayList<>(BlueprintsManager.getInstance().getBlueprints());
