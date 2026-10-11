@@ -2,7 +2,6 @@ package vernando.blueprints;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.NativeImage;
-import com.mojang.blaze3d.platform.Window;
 import java.awt.AlphaComposite;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -84,15 +83,13 @@ public class Util {
 	}
 
 	public static boolean isShiftDown() {
-		Window window = Minecraft.getInstance().getWindow();
-		return InputConstants.isKeyDown(window, InputConstants.KEY_LSHIFT)
-				|| InputConstants.isKeyDown(window, InputConstants.KEY_RSHIFT);
+		return InputConstants.isKeyDown(InputConstants.KEY_LSHIFT)
+				|| InputConstants.isKeyDown(InputConstants.KEY_RSHIFT);
 	}
 
 	public static boolean isCtrlDown() {
-		Window window = Minecraft.getInstance().getWindow();
-		return InputConstants.isKeyDown(window, InputConstants.KEY_LCONTROL)
-				|| InputConstants.isKeyDown(window, InputConstants.KEY_RCONTROL);
+		return InputConstants.isKeyDown(InputConstants.KEY_LCONTROL)
+				|| InputConstants.isKeyDown(InputConstants.KEY_RCONTROL);
 	}
 
 	public static String getWorldOrServerName() {

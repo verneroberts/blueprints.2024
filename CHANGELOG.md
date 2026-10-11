@@ -2,6 +2,14 @@
 
 All notable changes to the Blueprints mod will be documented in this file.
 
+## [26.3.12] - 2026-10-11
+
+### Changed
+- Upgraded to Minecraft 26.3
+- Updated Fabric Loader to 0.19.5, Fabric API to 0.162.0+26.3, Loom to 1.18 and Gradle to 9.7.1
+- Ported to the 26.3 renderpearl GPU API and SDL3 input (key bindings and mouse buttons no longer use GLFW)
+- Enabled Gradle configuration cache
+
 ## [26.2.12] - 2026-07-04
 
 ### Added

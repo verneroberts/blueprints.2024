@@ -2,7 +2,6 @@ package vernando.blueprints;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -10,7 +9,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
-import org.lwjgl.glfw.GLFW;
+import org.lwjgl.sdl.SDLMouse;
 
 @Environment(EnvType.CLIENT)
 public class BlueprintCalibrationScreen extends Screen {
@@ -244,10 +243,9 @@ public class BlueprintCalibrationScreen extends Screen {
     }
 
     private void handleMouseInput(int mouseX, int mouseY) {
-        Minecraft client = Minecraft.getInstance();
-        long windowHandle = client.getWindow().handle();
-        boolean isMousePressed = GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_LEFT) == GLFW.GLFW_PRESS;
-        boolean isMiddleMousePressed = GLFW.glfwGetMouseButton(windowHandle, GLFW.GLFW_MOUSE_BUTTON_MIDDLE) == GLFW.GLFW_PRESS;
+        int mouseButtons = SDLMouse.SDL_GetMouseState(null, null);
+        boolean isMousePressed = (mouseButtons & SDLMouse.SDL_BUTTON_LMASK) != 0;
+        boolean isMiddleMousePressed = (mouseButtons & SDLMouse.SDL_BUTTON_MMASK) != 0;
 
         // Get current image bounds for coordinate conversion
         int imageDisplayWidth = width;

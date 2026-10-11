@@ -24,18 +24,18 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryUtil;
 
-import com.mojang.blaze3d.IndexType;
-import com.mojang.blaze3d.PrimitiveTopology;
-import com.mojang.blaze3d.buffers.GpuBuffer;
-import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
-import com.mojang.blaze3d.systems.RenderPass;
+import com.mojang.renderpearl.api.pipeline.IndexType;
+import com.mojang.renderpearl.api.pipeline.PrimitiveTopology;
+import com.mojang.renderpearl.api.buffers.GpuBuffer;
+import com.mojang.renderpearl.api.buffers.GpuBufferSlice;
+import com.mojang.renderpearl.api.pipeline.RenderPipeline;
+import com.mojang.renderpearl.api.commands.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.ByteBufferBuilder;
 import com.mojang.blaze3d.vertex.MeshData;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.renderpearl.api.vertex.VertexFormat;
 import com.mojang.math.Axis;
 import com.google.gson.Gson;
 
@@ -227,9 +227,9 @@ public class Blueprint {
 		Vec3 cam = camera.position();
 		PoseStack ms = new PoseStack();
 		ms.translate((float)(config.positionX - cam.x), (float)(config.positionY - cam.y), (float)(config.positionZ - cam.z));
-		ms.mulPose(Axis.XP.rotationDegrees(config.rotationX));
-		ms.mulPose(Axis.YP.rotationDegrees(config.rotationY));
-		ms.mulPose(Axis.ZP.rotationDegrees(config.rotationZ));
+		ms.rotateDegrees(Axis.XP, config.rotationX);
+		ms.rotateDegrees(Axis.YP, config.rotationY);
+		ms.rotateDegrees(Axis.ZP, config.rotationZ);
 		Matrix4f modelMatrix = new Matrix4f(ms.last().pose());
 
 		// Full model-view = current view matrix × blueprint model matrix.
@@ -297,10 +297,10 @@ public class Blueprint {
 					Optional.empty(),
 					client.gameRenderer.mainRenderTarget().getDepthTextureView(),
 					OptionalDouble.empty())) {
-			rp.setPipeline(pipeline);
+			rp.setPipeline(RenderSystem.getCompiledPipeline(pipeline));
 			RenderSystem.bindDefaultUniforms(rp);
 			rp.setUniform("DynamicTransforms", dynamicTransforms);
-			rp.bindTexture("Sampler0", tex.getTextureView(), tex.getSampler());
+			rp.setUniform("Sampler0", tex.getTextureView(), tex.getSampler());
 			rp.setVertexBuffer(0, gpuBuf.slice());
 			rp.setIndexBuffer(indices, indexType);
 			rp.drawIndexed(drawParams.indexCount(), 1, 0, 0, 0);
