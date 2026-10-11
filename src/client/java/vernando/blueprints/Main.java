@@ -12,7 +12,6 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Items;
-import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,9 +32,9 @@ public class Main implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		KeyMapping.Category category = KeyMapping.Category.register(Identifier.fromNamespaceAndPath(MOD_ID, "blueprints"));
-		keyLaunchConfig = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.blueprints.launch_config", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_O, category));
-		keyPull = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.blueprints.pull", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_MINUS, category));
-		keyPush = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.blueprints.push", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_EQUAL, category));
+		keyLaunchConfig = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.blueprints.launch_config", InputConstants.Type.KEYBOARD, InputConstants.KEY_O, category));
+		keyPull = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.blueprints.pull", InputConstants.Type.KEYBOARD, InputConstants.KEY_MINUS, category));
+		keyPush = KeyMappingHelper.registerKeyMapping(new KeyMapping("key.blueprints.push", InputConstants.Type.KEYBOARD, InputConstants.KEY_EQUALS, category));
 
 		Settings.loadSettings();
 
