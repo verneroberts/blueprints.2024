@@ -10,7 +10,6 @@ A client-side Minecraft mod that allows you to project reference images and sche
 
 - **Image Projection**: Display reference images directly in your Minecraft world
 - **Full Control**: Position, scale, rotate, flip/mirror, and adjust transparency of images
-- **Block Grid Overlay**: Project a block-spaced grid over any image to make counting blocks easy
 - **Drag & Drop Import**: Drop image files onto the config screen to import them
 - **Search**: Filter your blueprints by name in the config screen
 - **Per-World Organization**: Images are automatically organized by world and dimension
@@ -60,8 +59,6 @@ Click on any blueprint to access the positioning screen with these controls:
 
 **Display Controls:**
 - **Flip H / Flip V**: Mirror the image horizontally or vertically (handy for symmetric builds)
-- **Grid**: Overlay grid lines on the image — cycle between Off, Dark, and Light lines
-- **Grid Spacing**: Distance between grid lines in blocks (default 1). Calibrate the image first so image blocks match world blocks, and the grid becomes a true block-counting guide
 
 ## Demo
 
